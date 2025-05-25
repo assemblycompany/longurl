@@ -203,122 +203,106 @@ function getPrimaryKeyForEntityType(entityType: EntityType): string {
   }
 }
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-const entityTypeArg = args.find(arg => 
-  Object.values(EntityType).includes(arg as EntityType)
-);
-const limitArg = args.find(arg => arg.startsWith('--limit='));
-const dryRunArg = args.includes('--dry-run');
-const allArg = args.includes('--all');
-const helpArg = args.includes('--help') || args.includes('-h');
-
-// Parse the limit value
-const limit = limitArg 
-  ? parseInt(limitArg.split('=')[1], 10) 
-  : 100;
-
-// Configuration
-const dbConfig: DatabaseConfig = {
-  strategy: args.includes('--lookup-table')
-    ? StorageStrategy.LOOKUP_TABLE
-    : StorageStrategy.INLINE,
-  lookupTable: args.find(arg => arg.startsWith('--table='))?.split('=')[1] || 'opaque_urls',
-  urlIdColumn: args.find(arg => arg.startsWith('--column='))?.split('=')[1] || 'url_id'
-};
-
-// Show help
-if (helpArg) {
-  console.log(`
-Opaque URL Generator CLI
-
-Usage:
-  npx ts-node cli.ts [entity_type] [options]
-
-Entity Types:
-  ${Object.values(EntityType).join(', ')}
-
-Options:
-  --all                Process all entity types
-  --limit=<number>     Maximum number of entities to process (default: 100)
-  --dry-run            Don't actually update the database
-  --lookup-table       Use lookup table strategy instead of inline
-  --table=<name>       Name of lookup table (default: opaque_urls)
-  --column=<name>      Name of URL ID column (default: url_id)
-  --help, -h           Show this help message
-
-Examples:
-  npx ts-node cli.ts insider --limit=50
-  npx ts-node cli.ts company --dry-run
-  npx ts-node cli.ts --all --lookup-table --table=entity_urls
-  `);
-  process.exit(0);
-}
-
 /**
- * Main function to run the CLI
+ * Main CLI function
  */
 async function main() {
-  console.log('Opaque URL Generator CLI');
-  console.log('========================');
+  const args = process.argv.slice(2);
   
-  console.log('Configuration:');
-  console.log(`- Database strategy: ${dbConfig.strategy}`);
-  if (dbConfig.strategy === StorageStrategy.LOOKUP_TABLE) {
-    console.log(`- Lookup table: ${dbConfig.lookupTable}`);
-  } else {
-    console.log(`- URL ID column: ${dbConfig.urlIdColumn}`);
+  if (args.length === 0) {
+    console.log('Usage: opaque-urls-cli <command> [options]');
+    console.log('');
+    console.log('Commands:');
+    console.log('  generate <entity-type> [limit] [--dry-run]  Generate URL IDs for entities');
+    console.log('  generate-all [limit] [--dry-run]            Generate URL IDs for all entity types');
+    console.log('');
+    console.log('Entity types: insider, company, filing, user');
+    console.log('');
+    console.log('Examples:');
+    console.log('  opaque-urls-cli generate insider 50');
+    console.log('  opaque-urls-cli generate-all 100 --dry-run');
+    return;
   }
-  console.log(`- Processing limit: ${limit}`);
-  console.log(`- Dry run: ${dryRunArg ? 'Yes' : 'No'}`);
   
-  const results = {
-    success: 0,
-    failed: 0,
-    total: 0
+  const command = args[0];
+  const dryRun = args.includes('--dry-run');
+  
+  // Database configuration
+  const dbConfig: DatabaseConfig = {
+    strategy: StorageStrategy.LOOKUP_TABLE,
+    connection: {
+      url: supabaseUrl!,
+      key: supabaseKey!
+    },
+    lookupTable: 'opaque_urls',
+    urlIdColumn: 'url_id'
   };
   
-  if (allArg) {
-    // Process all entity types
-    for (const type of Object.values(EntityType)) {
-      const result = await processEntityType(
-        type as EntityType,
-        dbConfig,
-        limit,
-        dryRunArg
-      );
-      
-      results.success += result.success;
-      results.failed += result.failed;
-      results.total += result.total;
-    }
-  } else if (entityTypeArg) {
-    // Process specific entity type
-    const entityType = entityTypeArg as EntityType;
-    const result = await processEntityType(
-      entityType,
-      dbConfig,
-      limit,
-      dryRunArg
-    );
+  if (command === 'generate') {
+    const entityTypeArg = args[1];
+    const limit = parseInt(args[2]) || 100;
     
-    results.success += result.success;
-    results.failed += result.failed;
-    results.total += result.total;
+    if (!entityTypeArg) {
+      console.error('Error: Entity type is required');
+      console.error('Valid entity types: insider, company, filing, user');
+      process.exit(1);
+    }
+    
+    // Validate entity type
+    const entityType = entityTypeArg.toLowerCase() as EntityType;
+    if (!Object.values(EntityType).includes(entityType)) {
+      console.error(`Error: Invalid entity type "${entityTypeArg}"`);
+      console.error('Valid entity types: insider, company, filing, user');
+      process.exit(1);
+    }
+    
+    console.log(`Starting URL ID generation for ${entityType} entities...`);
+    console.log(`Limit: ${limit}`);
+    console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
+    console.log('');
+    
+    const result = await processEntityType(entityType, dbConfig, limit, dryRun);
+    
+    console.log('\n=== SUMMARY ===');
+    console.log(`Total entities processed: ${result.total}`);
+    console.log(`Successfully generated: ${result.success}`);
+    console.log(`Failed: ${result.failed}`);
+    
+    if (result.failed > 0) {
+      process.exit(1);
+    }
+  } else if (command === 'generate-all') {
+    const limit = parseInt(args[1]) || 100;
+    
+    console.log('Starting URL ID generation for all entity types...');
+    console.log(`Limit per entity type: ${limit}`);
+    console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
+    console.log('');
+    
+    const entityTypes = Object.values(EntityType);
+    let totalSuccess = 0;
+    let totalFailed = 0;
+    let totalProcessed = 0;
+    
+    for (const entityType of entityTypes) {
+      const result = await processEntityType(entityType, dbConfig, limit, dryRun);
+      totalSuccess += result.success;
+      totalFailed += result.failed;
+      totalProcessed += result.total;
+    }
+    
+    console.log('\n=== OVERALL SUMMARY ===');
+    console.log(`Total entities processed: ${totalProcessed}`);
+    console.log(`Successfully generated: ${totalSuccess}`);
+    console.log(`Failed: ${totalFailed}`);
+    
+    if (totalFailed > 0) {
+      process.exit(1);
+    }
   } else {
-    console.error('Error: No entity type specified');
-    console.error('Use --help for usage information');
+    console.error(`Error: Unknown command "${command}"`);
+    console.error('Run without arguments to see usage information');
     process.exit(1);
-  }
-  
-  // Summary
-  console.log('\nSummary:');
-  console.log(`- Total entities processed: ${results.total}`);
-  console.log(`- Successfully updated: ${results.success}`);
-  console.log(`- Failed: ${results.failed}`);
-  
-  if (dryRunArg) {
-    console.log('\nNote: This was a dry run, no actual changes were made.');
   }
 }
 

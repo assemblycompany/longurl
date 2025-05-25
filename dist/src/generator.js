@@ -18,11 +18,12 @@ const collision_1 = require("./collision");
  * @param config Configuration options
  * @returns Generated URL and result info
  */
-async function generateUrlId(entityType, entityId, config = types_1.DEFAULT_CONFIG, dbConfig = types_1.DEFAULT_DB_CONFIG) {
+async function generateUrlId(entityType, entityId, config = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
     try {
         // Merge with default configuration
         const finalConfig = { ...types_1.DEFAULT_CONFIG, ...config };
         const { idLength = 6 } = finalConfig;
+        const domain = config.domain || 'longurl.co';
         // Generate initial opaque ID
         let urlId = (0, utils_1.generateBase62Id)(idLength);
         let attempts = 1;
@@ -44,19 +45,24 @@ async function generateUrlId(entityType, entityId, config = types_1.DEFAULT_CONF
         if (attempts >= MAX_ATTEMPTS) {
             return {
                 urlId: '',
+                shortUrl: '',
                 success: false,
                 error: `Failed to generate unique ID after ${MAX_ATTEMPTS} attempts`
             };
         }
+        // Build the short URL
+        const shortUrl = (0, utils_1.buildEntityUrl)(domain, entityType, urlId);
         // Return the successfully generated ID
         return {
             urlId,
+            shortUrl,
             success: true
         };
     }
     catch (error) {
         return {
             urlId: '',
+            shortUrl: '',
             success: false,
             error: `Error generating opaque URL: ${error instanceof Error ? error.message : String(error)}`
         };

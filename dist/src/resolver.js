@@ -11,12 +11,15 @@ const supabase_js_1 = require("@supabase/supabase-js");
 const types_1 = require("../types");
 const utils_1 = require("../utils");
 // Cache for resolution results to improve performance
-const resolutionCache = {
-    [types_1.EntityType.INSIDER]: {},
-    [types_1.EntityType.COMPANY]: {},
-    [types_1.EntityType.FILING]: {},
-    [types_1.EntityType.USER]: {}
-};
+const resolutionCache = {};
+/**
+ * Initialize cache for entity type if it doesn't exist
+ */
+function initCacheForType(entityType) {
+    if (!resolutionCache[entityType]) {
+        resolutionCache[entityType] = {};
+    }
+}
 /**
  * Resolve an opaque URL ID to its corresponding entity
  *
@@ -34,6 +37,8 @@ async function resolveUrlId(entityType, urlId, dbConfig = types_1.DEFAULT_DB_CON
                 error: 'Invalid URL ID format'
             };
         }
+        // Initialize cache for this entity type
+        initCacheForType(entityType);
         // Check cache first
         const cacheKey = `${entityType}:${urlId}`;
         if (resolutionCache[entityType][urlId]) {
@@ -170,7 +175,8 @@ function clearResolutionCache(entityType) {
         resolutionCache[entityType] = {};
     }
     else {
-        Object.values(types_1.EntityType).forEach(type => {
+        // Clear all cache entries
+        Object.keys(resolutionCache).forEach(type => {
             resolutionCache[type] = {};
         });
     }

@@ -14,30 +14,30 @@ export declare const BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcd
  */
 export declare const generateBase62Id: (length?: number) => string;
 /**
+ * Build a complete entity URL from domain, entity type, and URL ID
+ *
+ * @param domain Base domain (e.g., 'longurl.co')
+ * @param entityType Type of entity
+ * @param urlId Generated URL ID
+ * @returns Complete short URL
+ */
+export declare function buildEntityUrl(domain: string, entityType: string, urlId: string): string;
+/**
  * Extract entity information from a URL path
  *
  * @param urlPath URL path like "/product/X7gT5p" or "/X7gT5p"
- * @param validEntityTypes Optional array of valid entity types to validate against
- * @returns Object with entityType and urlId, or null if invalid
+ * @param validEntityTypes Optional array of valid entity types for validation
+ * @returns Parsed entity information or null if invalid
  */
-export declare const parseEntityUrl: (urlPath: string, validEntityTypes?: string[]) => {
+export declare function parseEntityUrl(urlPath: string, validEntityTypes?: string[]): {
     entityType: string;
     urlId: string;
 } | null;
 /**
- * Build a complete URL for an entity
+ * Validate if a string is a valid URL ID
  *
- * @param entityType Type of entity (or 'default' for non-entity URLs)
- * @param urlId The URL ID
- * @param baseUrl Optional base URL (default: "")
- * @returns Complete URL string
+ * @param urlId String to validate
+ * @param expectedLength Expected length (default: 6)
+ * @returns True if valid Base62 string of correct length
  */
-export declare const buildEntityUrl: (entityType: string, urlId: string, baseUrl?: string) => string;
-/**
- * Check if a string looks like a valid URL ID
- *
- * @param str String to validate
- * @param length Expected length (default: 6)
- * @returns True if the string looks like a URL ID
- */
-export declare const isValidUrlId: (str: string, length?: number) => boolean;
+export declare function isValidUrlId(urlId: string, expectedLength?: number): boolean;

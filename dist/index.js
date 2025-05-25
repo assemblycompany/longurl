@@ -91,9 +91,9 @@ class LongURL {
             // Store the URL
             await this.storeUrl(urlId, originalUrl, options);
             // Build the complete short URL
-            const domain = this.config.domain || this.config.baseUrl || 'https://longurl.co';
+            const domain = this.config.domain || 'https://longurl.co';
             const shortUrl = (options === null || options === void 0 ? void 0 : options.entityType)
-                ? (0, utils_1.buildEntityUrl)(options.entityType, urlId, domain)
+                ? (0, utils_1.buildEntityUrl)(domain, options.entityType, urlId)
                 : `${domain}/${urlId}`;
             return {
                 urlId,
@@ -154,11 +154,9 @@ class LongURL {
                 entity = entityData;
             }
             return {
-                originalUrl: data.original_url,
                 entity,
                 entityId: data.entity_id,
                 entityType: data.entity_type,
-                clickCount: (data.click_count || 0) + 1,
                 success: true
             };
         }
@@ -199,8 +197,8 @@ class LongURL {
             .slice(0, 10)
             .map((record) => ({
             urlId: record.url_id,
-            entityType: record.entity_type,
-            clickedAt: record.created_at
+            entityType: record.entity_type || 'default',
+            timestamp: new Date(record.created_at)
         }));
         return {
             totalClicks,

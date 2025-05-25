@@ -114,9 +114,9 @@ export class LongURL {
       await this.storeUrl(urlId, originalUrl, options);
 
       // Build the complete short URL
-      const domain = this.config.domain || this.config.baseUrl || 'https://longurl.co';
+      const domain = this.config.domain || 'https://longurl.co';
       const shortUrl = options?.entityType 
-        ? buildEntityUrl(options.entityType, urlId, domain)
+        ? buildEntityUrl(domain, options.entityType, urlId)
         : `${domain}/${urlId}`;
 
       return {
@@ -186,11 +186,9 @@ export class LongURL {
       }
 
       return {
-        originalUrl: data.original_url,
         entity,
         entityId: data.entity_id,
         entityType: data.entity_type,
-        clickCount: (data.click_count || 0) + 1,
         success: true
       };
 
@@ -239,8 +237,8 @@ export class LongURL {
       .slice(0, 10)
       .map((record: any) => ({
         urlId: record.url_id,
-        entityType: record.entity_type,
-        clickedAt: record.created_at
+        entityType: record.entity_type || 'default',
+        timestamp: new Date(record.created_at)
       }));
 
     return {

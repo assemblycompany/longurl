@@ -12,7 +12,7 @@ import {
   DatabaseConfig,
   DEFAULT_DB_CONFIG
 } from '../types';
-import { generateBase62Id, isValidUrlId } from '../utils';
+import { generateBase62Id, isValidUrlId, buildEntityUrl } from '../utils';
 import { checkCollision } from './collision';
 
 /**
@@ -26,13 +26,14 @@ import { checkCollision } from './collision';
 export async function generateUrlId(
   entityType: EntityType,
   entityId: string,
-  config: OpaqueUrlConfig = DEFAULT_CONFIG,
+  config: OpaqueUrlConfig = {},
   dbConfig: DatabaseConfig = DEFAULT_DB_CONFIG
 ): Promise<GenerationResult> {
   try {
     // Merge with default configuration
     const finalConfig = { ...DEFAULT_CONFIG, ...config };
     const { idLength = 6 } = finalConfig;
+    const domain = config.domain || 'longurl.co';
     
     // Generate initial opaque ID
     let urlId = generateBase62Id(idLength);
@@ -60,19 +61,25 @@ export async function generateUrlId(
     if (attempts >= MAX_ATTEMPTS) {
       return {
         urlId: '',
+        shortUrl: '',
         success: false,
         error: `Failed to generate unique ID after ${MAX_ATTEMPTS} attempts`
       };
     }
     
+    // Build the short URL
+    const shortUrl = buildEntityUrl(domain, entityType, urlId);
+    
     // Return the successfully generated ID
     return {
       urlId,
+      shortUrl,
       success: true
     };
   } catch (error) {
     return {
       urlId: '',
+      shortUrl: '',
       success: false,
       error: `Error generating opaque URL: ${error instanceof Error ? error.message : String(error)}`
     };

@@ -3,7 +3,17 @@
  * Type definitions for the longurl package
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_CONFIG = exports.DEFAULT_DB_CONFIG = exports.StorageStrategy = void 0;
+exports.DEFAULT_DB_CONFIG = exports.DEFAULT_CONFIG = exports.StorageStrategy = exports.EntityType = void 0;
+/**
+ * Legacy entity types enum for backward compatibility
+ */
+var EntityType;
+(function (EntityType) {
+    EntityType["INSIDER"] = "insider";
+    EntityType["COMPANY"] = "company";
+    EntityType["FILING"] = "filing";
+    EntityType["USER"] = "user";
+})(EntityType || (exports.EntityType = EntityType = {}));
 /**
  * Storage strategy for URLs
  */
@@ -15,18 +25,21 @@ var StorageStrategy;
     StorageStrategy["INLINE"] = "inline";
 })(StorageStrategy || (exports.StorageStrategy = StorageStrategy = {}));
 /**
- * Default database configuration
- */
-exports.DEFAULT_DB_CONFIG = {
-    strategy: StorageStrategy.LOOKUP_TABLE,
-    lookupTable: 'short_urls',
-    urlIdColumn: 'url_id'
-};
-/**
- * Default configuration for LongURL
+ * Default configuration values
  */
 exports.DEFAULT_CONFIG = {
     idLength: 6,
-    useCache: true,
-    baseUrl: 'https://longurl.co'
+    analytics: true
+};
+/**
+ * Legacy default config for backward compatibility
+ */
+exports.DEFAULT_DB_CONFIG = {
+    strategy: StorageStrategy.LOOKUP_TABLE,
+    connection: {
+        url: process.env.SUPABASE_URL || '',
+        key: process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    },
+    lookupTable: 'short_urls',
+    urlIdColumn: 'url_id'
 };

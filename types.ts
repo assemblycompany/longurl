@@ -3,6 +3,24 @@
  */
 
 /**
+ * Legacy entity types enum for backward compatibility
+ */
+export enum EntityType {
+  INSIDER = 'insider',
+  COMPANY = 'company', 
+  FILING = 'filing',
+  USER = 'user'
+}
+
+/**
+ * Legacy config interface for backward compatibility
+ */
+export interface OpaqueUrlConfig {
+  idLength?: number;
+  domain?: string;
+}
+
+/**
  * Entity configuration for custom entity types
  */
 export interface EntityConfig {
@@ -32,113 +50,116 @@ export interface DatabaseConfig {
   /** Storage strategy for URLs */
   strategy: StorageStrategy;
   
-  /** Lookup table name (used with LOOKUP_TABLE strategy) */
-  lookupTable?: string;
-  
-  /** Column name for URL IDs (used with INLINE strategy) */
-  urlIdColumn?: string;
-  
-  /** Database connection config */
+  /** Database connection details */
   connection: {
     url: string;
     key: string;
   };
+  
+  /** Lookup table name (for LOOKUP_TABLE strategy) */
+  lookupTable?: string;
+  
+  /** URL ID column name (for INLINE strategy) */
+  urlIdColumn?: string;
 }
 
 /**
- * Configuration for the LongURL system
+ * Main configuration for LongURL
  */
 export interface LongURLConfig {
-  /** Entity configurations */
+  /** Custom entity configurations */
   entities: Record<string, EntityConfig>;
   
   /** Database configuration */
   database: DatabaseConfig;
   
-  /** Length of the generated ID (default: 6) */
+  /** Base domain for shortened URLs */
+  domain: string;
+  
+  /** Default URL ID length */
   idLength?: number;
   
-  /** Whether to use cache for faster lookups */
-  useCache?: boolean;
-  
-  /** Base URL for constructing full URLs */
-  baseUrl?: string;
-  
-  /** Custom domain for short URLs */
-  domain?: string;
+  /** Enable analytics tracking */
+  analytics?: boolean;
 }
 
 /**
- * Default database configuration
+ * Result of URL generation
  */
-export const DEFAULT_DB_CONFIG: Partial<DatabaseConfig> = {
-  strategy: StorageStrategy.LOOKUP_TABLE,
-  lookupTable: 'short_urls',
-  urlIdColumn: 'url_id'
-};
+export interface GenerationResult {
+  /** Generated URL ID */
+  urlId: string;
+  
+  /** Full shortened URL */
+  shortUrl: string;
+  
+  /** Whether generation was successful */
+  success: boolean;
+  
+  /** Error message if generation failed */
+  error?: string;
+}
 
 /**
- * Default configuration for LongURL
+ * Result of URL resolution
+ */
+export interface ResolutionResult<T = any> {
+  /** Resolved entity data */
+  entity?: T;
+  
+  /** Original entity ID */
+  entityId?: string;
+  
+  /** Entity type */
+  entityType?: string;
+  
+  /** Whether resolution was successful */
+  success: boolean;
+  
+  /** Error message if resolution failed */
+  error?: string;
+}
+
+/**
+ * Analytics data structure
+ */
+export interface AnalyticsData {
+  /** Total clicks across all URLs */
+  totalClicks: number;
+  
+  /** Clicks broken down by entity type */
+  clicksByEntity: Record<string, number>;
+  
+  /** Recent click events */
+  recentClicks: Array<{
+    urlId: string;
+    entityType: string;
+    timestamp: Date;
+    userAgent?: string;
+    ip?: string;
+  }>;
+}
+
+/**
+ * Default configuration values
  */
 export const DEFAULT_CONFIG: Partial<LongURLConfig> = {
   idLength: 6,
-  useCache: true,
-  baseUrl: 'https://longurl.co'
+  analytics: true
 };
 
 /**
- * Generation result
+ * Legacy default config for backward compatibility
  */
-export interface GenerationResult {
-  /** The generated URL ID */
-  urlId: string;
-  
-  /** The complete short URL */
-  shortUrl: string;
-  
-  /** Whether the operation was successful */
-  success: boolean;
-  
-  /** Error message if the operation failed */
-  error?: string;
-}
-
-/**
- * Resolution result from lookups
- */
-export interface ResolutionResult<T = any> {
-  /** The original URL */
-  originalUrl?: string;
-  
-  /** The entity that was resolved */
-  entity?: T;
-  
-  /** The entity ID */
-  entityId?: string;
-  
-  /** The entity type */
-  entityType?: string;
-  
-  /** Click count */
-  clickCount?: number;
-  
-  /** Whether the resolution was successful */
-  success: boolean;
-  
-  /** Error message if the resolution failed */
-  error?: string;
-}
-
-/**
- * Structure for parsed entity URLs
- */
-export interface ParsedEntityUrl {
-  /** The entity type from the URL */
-  entityType: string;
-  
-  /** The URL ID */
-  urlId: string;
-}
+export const DEFAULT_DB_CONFIG: DatabaseConfig = {
+  strategy: StorageStrategy.LOOKUP_TABLE,
+  connection: {
+    url: process.env.SUPABASE_URL || '',
+    key: process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  },
+  lookupTable: 'short_urls',
+  urlIdColumn: 'url_id'
+};
 
 /**
  * Cache statistics
@@ -155,6 +176,17 @@ export interface CacheStats {
   
   /** Total lookups */
   total: number;
+}
+
+/**
+ * Structure for parsed entity URLs
+ */
+export interface ParsedEntityUrl {
+  /** The entity type from the URL */
+  entityType: string;
+  
+  /** The URL ID */
+  urlId: string;
 }
 
 /**
@@ -187,22 +219,4 @@ export interface ShortUrlRecord {
   
   /** When the URL was last updated */
   updated_at: string;
-}
-
-/**
- * Analytics data structure
- */
-export interface AnalyticsData {
-  /** Total clicks */
-  totalClicks: number;
-  
-  /** Clicks by entity type */
-  clicksByEntity: Record<string, number>;
-  
-  /** Recent activity */
-  recentClicks: Array<{
-    urlId: string;
-    entityType?: string;
-    clickedAt: string;
-  }>;
 } 

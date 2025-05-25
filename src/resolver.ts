@@ -9,12 +9,16 @@ import { EntityType, ResolutionResult, DatabaseConfig, StorageStrategy, DEFAULT_
 import { isValidUrlId } from '../utils';
 
 // Cache for resolution results to improve performance
-const resolutionCache: Record<string, Record<string, any>> = {
-  [EntityType.INSIDER]: {},
-  [EntityType.COMPANY]: {},
-  [EntityType.FILING]: {},
-  [EntityType.USER]: {}
-};
+const resolutionCache: Record<string, Record<string, any>> = {};
+
+/**
+ * Initialize cache for entity type if it doesn't exist
+ */
+function initCacheForType(entityType: string): void {
+  if (!resolutionCache[entityType]) {
+    resolutionCache[entityType] = {};
+  }
+}
 
 /**
  * Resolve an opaque URL ID to its corresponding entity
@@ -37,6 +41,9 @@ export async function resolveUrlId<T = any>(
         error: 'Invalid URL ID format'
       };
     }
+    
+    // Initialize cache for this entity type
+    initCacheForType(entityType);
     
     // Check cache first
     const cacheKey = `${entityType}:${urlId}`;
@@ -189,7 +196,8 @@ export function clearResolutionCache(entityType?: EntityType): void {
   if (entityType) {
     resolutionCache[entityType] = {};
   } else {
-    Object.values(EntityType).forEach(type => {
+    // Clear all cache entries
+    Object.keys(resolutionCache).forEach(type => {
       resolutionCache[type] = {};
     });
   }
