@@ -187,7 +187,7 @@ async function main() {
     console.log('');
     console.log('Examples:');
     console.log('  longurl-cli generate product products id 50');
-    console.log('  longurl-cli generate user users user_id 100 --dry-run');
+    console.log('  longurl-cli generate customer customers customer_id 100 --dry-run');
     return;
   }
   

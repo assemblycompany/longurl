@@ -12,12 +12,16 @@ const sampleUrl = 'https://www.amazon.com/dp/B0D3M8QYWL?ref=cm_sw_r_cso_cp_apin_
 async function testLongURL() {
   console.log('🚀 Testing LongURL with Amazon sample...\n');
   
-  // Configuration for testing
+  // Configuration for testing - shows flexibility with any entity type
   const config = {
     entities: {
-      product: {
-        tableName: 'products',
+      item: {
+        tableName: 'items',
         primaryKey: 'id'
+      },
+      listing: {
+        tableName: 'listings', 
+        primaryKey: 'listing_id'
       }
     },
     database: {
@@ -38,16 +42,17 @@ async function testLongURL() {
     console.log(`${sampleUrl}\n`);
     console.log(`📏 Length: ${sampleUrl.length} characters\n`);
     
-    // Test URL shortening
+    // Test URL shortening with flexible entity type
     console.log('⚡ Shortening URL...');
     const result = await longurl.shorten(
-      'product',           // entity type
-      'B0D3M8QYWL',       // entity ID (Amazon ASIN)
-      sampleUrl,          // original URL
+      'item',               // entity type - can be anything
+      'B0D3M8QYWL',        // entity ID (Amazon ASIN)
+      sampleUrl,           // original URL
       {
         title: 'Amazon Product',
         description: 'Sample Amazon product URL',
-        tags: ['amazon', 'product', 'test']
+        tags: ['amazon', 'product', 'test'],
+        source: 'api-test'
       }
     );
     
@@ -92,7 +97,7 @@ async function testLongURL() {
     
     // Show the power of the system
     console.log('💡 Use Cases:');
-    console.log('• Share clean URLs: yoursite.com/p/Ab1C2d');
+    console.log('• Share clean URLs: yoursite.com/item/Ab1C2d');
     console.log('• Track clicks and engagement');
     console.log('• A/B test different landing pages');
     console.log('• Manage affiliate links');
@@ -105,6 +110,7 @@ async function testLongURL() {
     console.log('• Email marketing');
     console.log('• QR codes');
     console.log('• Mobile apps');
+    console.log('• Any entity-based URL management');
     
   } catch (error) {
     console.error('💥 Test failed:', error.message);

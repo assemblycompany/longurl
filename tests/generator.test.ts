@@ -18,8 +18,8 @@ describe('URL Generator', () => {
       (collision.checkCollision as jest.Mock).mockResolvedValue(false);
       
       const result = await generateUrlId(
-        'insider',
-        'insider-123'
+        'product',
+        'product-123'
       );
       
       expect(result.success).toBe(true);
@@ -30,7 +30,7 @@ describe('URL Generator', () => {
       // Verify collision check was called
       expect(collision.checkCollision).toHaveBeenCalledTimes(1);
       expect(collision.checkCollision).toHaveBeenCalledWith(
-        'insider',
+        'product',
         expect.any(String),
         DEFAULT_DB_CONFIG
       );
@@ -43,8 +43,8 @@ describe('URL Generator', () => {
         .mockResolvedValueOnce(false); // Second call - no collision
       
       const result = await generateUrlId(
-        'company',
-        'company-123'
+        'customer',
+        'customer-123'
       );
       
       expect(result.success).toBe(true);
@@ -60,8 +60,8 @@ describe('URL Generator', () => {
       (collision.checkCollision as jest.Mock).mockResolvedValue(true);
       
       const result = await generateUrlId(
-        'filing',
-        'filing-123'
+        'document',
+        'document-123'
       );
       
       expect(result.success).toBe(false);
@@ -78,8 +78,8 @@ describe('URL Generator', () => {
       
       const customLength = 8;
       const result = await generateUrlId(
-        'user',
-        'user-123',
+        'article',
+        'article-123',
         { idLength: customLength }
       );
       
@@ -95,8 +95,8 @@ describe('URL Generator', () => {
       );
       
       const result = await generateUrlId(
-        'insider',
-        'insider-123'
+        'product',
+        'product-123'
       );
       
       expect(result.success).toBe(false);

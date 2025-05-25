@@ -3,7 +3,7 @@ import { StorageStrategy } from '../types';
 
 // Mock the Supabase client
 const mockSingle = jest.fn();
-const mockEq = jest.fn();
+const mockEq: jest.Mock = jest.fn();
 const mockSelect = jest.fn(() => ({ eq: mockEq }));
 const mockFrom = jest.fn(() => ({ select: mockSelect }));
 
@@ -47,8 +47,8 @@ describe('URL Resolver', () => {
   };
 
   const mockEntityConfig = {
-    tableName: 'insiders',
-    primaryKey: 'insider_id'
+    tableName: 'products',
+    primaryKey: 'product_id'
   };
   
   describe('resolveUrlId', () => {
@@ -56,16 +56,16 @@ describe('URL Resolver', () => {
       // Mock a successful response
       const mockData = {
         id: 'db-123',
-        insider_id: 'insider-123',
-        name: 'John Doe',
-        position: 'CEO',
+        product_id: 'product-123',
+        name: 'Sample Product',
+        price: 99.99,
         url_id: 'Ab1C2d'
       };
       
       mockSingle.mockResolvedValue({ data: mockData, error: null });
       
       const result = await resolveUrlId(
-        'insider',
+        'product',
         'Ab1C2d',
         mockDbConfig,
         mockEntityConfig
@@ -73,22 +73,22 @@ describe('URL Resolver', () => {
       
       expect(result.success).toBe(true);
       expect(result.entity).toEqual(mockData);
-      expect(result.entityId).toBe('insider-123');
-      expect(result.entityType).toBe('insider');
+      expect(result.entityId).toBe('product-123');
+      expect(result.entityType).toBe('product');
     });
     
     it('should resolve a lookup table URL ID to its entity', async () => {
       // Mock successful lookup table response
       const lookupData = {
-        entity_id: 'company-456',
-        entity_type: 'company',
+        entity_id: 'customer-456',
+        entity_type: 'customer',
         original_url: 'https://example.com'
       };
       
       const entityData = {
-        company_id: 'company-456',
-        company_name: 'Acme Corp',
-        ticker: 'ACME'
+        customer_id: 'customer-456',
+        customer_name: 'Acme Corp',
+        email: 'contact@acme.com'
       };
       
       // First call returns lookup data, second call returns entity data
@@ -97,7 +97,7 @@ describe('URL Resolver', () => {
         .mockResolvedValueOnce({ data: entityData, error: null });
       
       const result = await resolveUrlId(
-        'company',
+        'customer',
         'Xy9Z8a',
         { 
           strategy: StorageStrategy.LOOKUP_TABLE,
@@ -107,23 +107,23 @@ describe('URL Resolver', () => {
           },
           lookupTable: 'short_urls'
         },
-        { tableName: 'companies', primaryKey: 'company_id' }
+        { tableName: 'customers', primaryKey: 'customer_id' }
       );
       
       expect(result.success).toBe(true);
       expect(result.entity).toEqual(entityData);
-      expect(result.entityId).toBe('company-456');
-      expect(result.entityType).toBe('company');
+      expect(result.entityId).toBe('customer-456');
+      expect(result.entityType).toBe('customer');
       
       // Check that from was called as expected
       expect(mockFrom).toHaveBeenCalledTimes(2);
       expect(mockFrom).toHaveBeenCalledWith('short_urls');
-      expect(mockFrom).toHaveBeenCalledWith('companies');
+      expect(mockFrom).toHaveBeenCalledWith('customers');
     });
     
     it('should return error for invalid URL ID format', async () => {
       const result = await resolveUrlId(
-        'insider',
+        'product',
         'invalid#id',
         mockDbConfig,
         mockEntityConfig
@@ -145,7 +145,7 @@ describe('URL Resolver', () => {
       });
       
       const result = await resolveUrlId(
-        'filing',
+        'document',
         'Ab1C2d',
         mockDbConfig,
         mockEntityConfig
@@ -167,7 +167,7 @@ describe('URL Resolver', () => {
       });
       
       const result = await resolveUrlId(
-        'user',
+        'article',
         'Ab1C2d',
         mockDbConfig,
         mockEntityConfig
@@ -181,9 +181,9 @@ describe('URL Resolver', () => {
     it('should use cached results when available', async () => {
       // First call - mock successful response
       const mockData = {
-        id: 'insider-789',
-        insider_id: 'insider-789',
-        name: 'Jane Smith',
+        id: 'product-789',
+        product_id: 'product-789',
+        name: 'Cached Product',
         url_id: 'Ef3G4h'
       };
       
@@ -191,7 +191,7 @@ describe('URL Resolver', () => {
       
       // First call should hit the database
       const result1 = await resolveUrlId(
-        'insider',
+        'product',
         'Ef3G4h',
         mockDbConfig,
         mockEntityConfig
@@ -200,31 +200,29 @@ describe('URL Resolver', () => {
       expect(result1.success).toBe(true);
       expect(result1.entity).toEqual(mockData);
       
-      // Reset the mock to return different data
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'different-id',
-          insider_id: 'different-id',
-          name: 'Different Name',
-          url_id: 'Ef3G4h'
-        },
-        error: null
-      });
+      // Change the mock data - but this shouldn't affect the second call
+      // because it should use the cached value
+      const differentMockData = {
+        id: 'different-id',
+        product_id: 'different-product',
+        name: 'Different Product',
+        url_id: 'Ef3G4h'
+      };
       
-      // Second call with same ID should use cache (not hit database again)
+      mockSingle.mockResolvedValue({ data: differentMockData, error: null });
+      
+      // Second call should use cached result
       const result2 = await resolveUrlId(
-        'insider',
+        'product',
         'Ef3G4h',
         mockDbConfig,
         mockEntityConfig
       );
       
-      // Should still have the original data from cache
       expect(result2.success).toBe(true);
-      expect(result2.entity).toEqual(result1.entity);
-      expect(result2.entity.name).toBe('Jane Smith');
+      expect(result2.entity).toEqual(mockData); // Should still be the original cached data
       
-      // Database should only have been called once (for the first request)
+      // Database should only have been called once
       expect(mockSingle).toHaveBeenCalledTimes(1);
     });
   });
