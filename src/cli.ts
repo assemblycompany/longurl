@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * CLI tool for batch generating opaque URLs for existing entities.
+ * CLI tool for batch generating URLs for existing entities.
  * 
- * This utility helps in generating and updating opaque URL IDs
+ * This utility helps in generating and updating URL IDs
  * for entities that already exist in the database.
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { generateUrlId } from './generator';
-import { EntityType, DatabaseConfig, StorageStrategy } from '../types';
+import { DatabaseConfig, StorageStrategy } from '../types';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { existsSync } from 'fs';
@@ -48,24 +48,25 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
- * Process all entities of a specific type and generate URL IDs for them.
+ * Process entities of a specific type and generate URL IDs for them.
  * 
  * @param entityType Type of entity to process
+ * @param tableName Database table name
+ * @param primaryKey Primary key column name
  * @param dbConfig Database configuration
  * @param limit Max number of entities to process in one batch
  * @param dryRun If true, don't actually update the database
  */
 async function processEntityType(
-  entityType: EntityType,
+  entityType: string,
+  tableName: string,
+  primaryKey: string,
   dbConfig: DatabaseConfig,
   limit: number = 100,
   dryRun: boolean = false
 ): Promise<{ success: number; failed: number; total: number }> {
   console.log(`\nProcessing ${entityType} entities...`);
   
-  // Get table name based on entity type
-  const tableName = getTableFromEntityType(entityType);
-  const idColumn = getPrimaryKeyForEntityType(entityType);
   const urlIdColumn = dbConfig.urlIdColumn || 'url_id';
   
   // Fetch entities without URL IDs
@@ -73,7 +74,7 @@ async function processEntityType(
   
   let query = supabase
     .from(tableName)
-    .select(`${idColumn}, ${urlIdColumn}`)
+    .select(`${primaryKey}, ${urlIdColumn}`)
     .is(urlIdColumn, null)
     .limit(limit);
   
@@ -96,10 +97,10 @@ async function processEntityType(
   let failed = 0;
   
   for (const entity of entities) {
-    const entityId = entity[idColumn as keyof typeof entity];
+    const entityId = entity[primaryKey as keyof typeof entity];
     
     if (!entityId) {
-      console.error(`Entity is missing ${idColumn}, skipping`);
+      console.error(`Entity is missing ${primaryKey}, skipping`);
       failed++;
       continue;
     }
@@ -108,7 +109,7 @@ async function processEntityType(
     
     try {
       // Generate URL ID
-      const result = await generateUrlId(entityType, entityId.toString(), undefined, dbConfig);
+      const result = await generateUrlId(entityType, entityId.toString(), {}, dbConfig);
       
       if (!result.success || !result.urlId) {
         console.error(`Failed to generate URL ID for ${entityType} ${entityId}: ${result.error}`);
@@ -123,14 +124,18 @@ async function processEntityType(
       if (!dryRun) {
         if (dbConfig.strategy === StorageStrategy.LOOKUP_TABLE) {
           // Insert into lookup table
-          const lookupTable = dbConfig.lookupTable || 'opaque_urls';
+          const lookupTable = dbConfig.lookupTable || 'short_urls';
           
           const { error: insertError } = await supabase
             .from(lookupTable)
             .insert({
               url_id: urlId,
               entity_id: entityId,
-              entity_type: entityType
+              entity_type: entityType,
+              original_url: `/${entityType}/${entityId}`, // Default URL pattern
+              click_count: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             });
           
           if (insertError) {
@@ -143,7 +148,7 @@ async function processEntityType(
           const { error: updateError } = await supabase
             .from(tableName)
             .update({ [urlIdColumn]: urlId })
-            .eq(idColumn, entityId);
+            .eq(primaryKey, entityId);
           
           if (updateError) {
             console.error(`Error updating ${entityType} ${entityId}:`, updateError);
@@ -168,59 +173,21 @@ async function processEntityType(
 }
 
 /**
- * Get table name for entity type
- */
-function getTableFromEntityType(entityType: EntityType): string {
-  switch (entityType) {
-    case EntityType.INSIDER:
-      return 'insiders';
-    case EntityType.COMPANY:
-      return 'companies';
-    case EntityType.FILING:
-      return 'filings';
-    case EntityType.USER:
-      return 'users';
-    default:
-      throw new Error(`Unknown entity type: ${entityType}`);
-  }
-}
-
-/**
- * Get primary key column for entity type
- */
-function getPrimaryKeyForEntityType(entityType: EntityType): string {
-  switch (entityType) {
-    case EntityType.INSIDER:
-      return 'insider_id';
-    case EntityType.COMPANY:
-      return 'company_id';
-    case EntityType.FILING:
-      return 'id';
-    case EntityType.USER:
-      return 'id';
-    default:
-      throw new Error(`Unknown entity type: ${entityType}`);
-  }
-}
-
-/**
  * Main CLI function
  */
 async function main() {
   const args = process.argv.slice(2);
   
   if (args.length === 0) {
-    console.log('Usage: opaque-urls-cli <command> [options]');
+    console.log('Usage: longurl-cli <command> [options]');
     console.log('');
     console.log('Commands:');
-    console.log('  generate <entity-type> [limit] [--dry-run]  Generate URL IDs for entities');
-    console.log('  generate-all [limit] [--dry-run]            Generate URL IDs for all entity types');
-    console.log('');
-    console.log('Entity types: insider, company, filing, user');
+    console.log('  generate <entity-type> <table-name> <primary-key> [limit] [--dry-run]');
+    console.log('    Generate URL IDs for entities in a specific table');
     console.log('');
     console.log('Examples:');
-    console.log('  opaque-urls-cli generate insider 50');
-    console.log('  opaque-urls-cli generate-all 100 --dry-run');
+    console.log('  longurl-cli generate product products id 50');
+    console.log('  longurl-cli generate user users user_id 100 --dry-run');
     return;
   }
   
@@ -234,34 +201,30 @@ async function main() {
       url: supabaseUrl!,
       key: supabaseKey!
     },
-    lookupTable: 'opaque_urls',
+    lookupTable: 'short_urls',
     urlIdColumn: 'url_id'
   };
   
   if (command === 'generate') {
-    const entityTypeArg = args[1];
-    const limit = parseInt(args[2]) || 100;
+    const entityType = args[1];
+    const tableName = args[2];
+    const primaryKey = args[3];
+    const limit = parseInt(args[4]) || 100;
     
-    if (!entityTypeArg) {
-      console.error('Error: Entity type is required');
-      console.error('Valid entity types: insider, company, filing, user');
-      process.exit(1);
-    }
-    
-    // Validate entity type
-    const entityType = entityTypeArg.toLowerCase() as EntityType;
-    if (!Object.values(EntityType).includes(entityType)) {
-      console.error(`Error: Invalid entity type "${entityTypeArg}"`);
-      console.error('Valid entity types: insider, company, filing, user');
+    if (!entityType || !tableName || !primaryKey) {
+      console.error('Error: entity-type, table-name, and primary-key are required');
+      console.error('Usage: longurl-cli generate <entity-type> <table-name> <primary-key> [limit] [--dry-run]');
       process.exit(1);
     }
     
     console.log(`Starting URL ID generation for ${entityType} entities...`);
+    console.log(`Table: ${tableName}`);
+    console.log(`Primary Key: ${primaryKey}`);
     console.log(`Limit: ${limit}`);
     console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
     console.log('');
     
-    const result = await processEntityType(entityType, dbConfig, limit, dryRun);
+    const result = await processEntityType(entityType, tableName, primaryKey, dbConfig, limit, dryRun);
     
     console.log('\n=== SUMMARY ===');
     console.log(`Total entities processed: ${result.total}`);
@@ -269,34 +232,6 @@ async function main() {
     console.log(`Failed: ${result.failed}`);
     
     if (result.failed > 0) {
-      process.exit(1);
-    }
-  } else if (command === 'generate-all') {
-    const limit = parseInt(args[1]) || 100;
-    
-    console.log('Starting URL ID generation for all entity types...');
-    console.log(`Limit per entity type: ${limit}`);
-    console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
-    console.log('');
-    
-    const entityTypes = Object.values(EntityType);
-    let totalSuccess = 0;
-    let totalFailed = 0;
-    let totalProcessed = 0;
-    
-    for (const entityType of entityTypes) {
-      const result = await processEntityType(entityType, dbConfig, limit, dryRun);
-      totalSuccess += result.success;
-      totalFailed += result.failed;
-      totalProcessed += result.total;
-    }
-    
-    console.log('\n=== OVERALL SUMMARY ===');
-    console.log(`Total entities processed: ${totalProcessed}`);
-    console.log(`Successfully generated: ${totalSuccess}`);
-    console.log(`Failed: ${totalFailed}`);
-    
-    if (totalFailed > 0) {
       process.exit(1);
     }
   } else {

@@ -1,20 +1,23 @@
 /**
- * Opaque URL Generator
+ * URL Generator
  *
- * Generates unique, opaque URL IDs for various entity types.
+ * Generates unique URL IDs for any entity types.
  */
-import { EntityType, OpaqueUrlConfig, GenerationResult, DatabaseConfig } from '../types';
+import { GenerationResult, DatabaseConfig } from '../types';
 /**
- * Generate an opaque URL ID for an entity
+ * Generate a URL ID for an entity
  *
- * @param entityType Type of entity (insider, company, etc.)
+ * @param entityType Type of entity (any string)
  * @param entityId Original entity ID
- * @param config Configuration options
+ * @param options Configuration options
  * @returns Generated URL and result info
  */
-export declare function generateUrlId(entityType: EntityType, entityId: string, config?: OpaqueUrlConfig, dbConfig?: DatabaseConfig): Promise<GenerationResult>;
+export declare function generateUrlId(entityType: string, entityId: string, options?: {
+    idLength?: number;
+    domain?: string;
+}, dbConfig?: DatabaseConfig): Promise<GenerationResult>;
 /**
- * Validate whether a string is a valid opaque URL ID
+ * Validate whether a string is a valid URL ID
  *
  * @param urlId The URL ID to validate
  * @param idLength Expected length (default: 6)

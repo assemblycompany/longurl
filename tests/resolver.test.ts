@@ -1,5 +1,5 @@
 import { resolveUrlId, clearResolutionCache } from '../src/resolver';
-import { EntityType, StorageStrategy } from '../types';
+import { StorageStrategy } from '../types';
 
 // Mock the Supabase client
 jest.mock('@supabase/supabase-js', () => ({
@@ -18,7 +18,7 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 
 // Shared mock response for Supabase
-let mockSupabaseResponse = { data: null, error: null };
+let mockSupabaseResponse: { data: any; error: any } = { data: null, error: null };
 
 describe('URL Resolver', () => {
   // Set environment variables for tests
@@ -38,6 +38,19 @@ describe('URL Resolver', () => {
   afterAll(() => {
     process.env = originalEnv;
   });
+
+  const mockDbConfig = {
+    strategy: StorageStrategy.INLINE,
+    connection: {
+      url: 'https://example.supabase.co',
+      key: 'mock-service-key'
+    }
+  };
+
+  const mockEntityConfig = {
+    tableName: 'insiders',
+    primaryKey: 'insider_id'
+  };
   
   describe('resolveUrlId', () => {
     it('should resolve an inline URL ID to its entity', async () => {
@@ -54,15 +67,16 @@ describe('URL Resolver', () => {
       };
       
       const result = await resolveUrlId(
-        EntityType.INSIDER,
+        'insider',
         'Ab1C2d',
-        { strategy: StorageStrategy.INLINE }
+        mockDbConfig,
+        mockEntityConfig
       );
       
       expect(result.success).toBe(true);
       expect(result.entity).toEqual(mockSupabaseResponse.data);
       expect(result.entityId).toBe('insider-123');
-      expect(result.entityType).toBe(EntityType.INSIDER);
+      expect(result.entityType).toBe('insider');
     });
     
     it('should resolve a lookup table URL ID to its entity', async () => {
@@ -70,7 +84,7 @@ describe('URL Resolver', () => {
       mockSupabaseResponse = {
         data: {
           entity_id: 'company-456',
-          entity_type: EntityType.COMPANY
+          entity_type: 'company'
         },
         error: null
       };
@@ -103,29 +117,36 @@ describe('URL Resolver', () => {
       });
       
       const result = await resolveUrlId(
-        EntityType.COMPANY,
+        'company',
         'Xy9Z8a',
         { 
           strategy: StorageStrategy.LOOKUP_TABLE,
-          lookupTable: 'opaque_urls'
-        }
+          connection: {
+            url: 'https://example.supabase.co',
+            key: 'mock-service-key'
+          },
+          lookupTable: 'short_urls'
+        },
+        { tableName: 'companies', primaryKey: 'company_id' }
       );
       
       expect(result.success).toBe(true);
       expect(result.entity).toEqual(secondResponse.data);
       expect(result.entityId).toBe('company-456');
-      expect(result.entityType).toBe(EntityType.COMPANY);
+      expect(result.entityType).toBe('company');
       
       // Check that from was called as expected
       expect(mockFrom).toHaveBeenCalledTimes(2);
-      expect(mockFrom).toHaveBeenCalledWith('opaque_urls');
+      expect(mockFrom).toHaveBeenCalledWith('short_urls');
       expect(mockFrom).toHaveBeenCalledWith('companies');
     });
     
     it('should return error for invalid URL ID format', async () => {
       const result = await resolveUrlId(
-        EntityType.INSIDER,
-        'invalid#id'
+        'insider',
+        'invalid#id',
+        mockDbConfig,
+        mockEntityConfig
       );
       
       expect(result.success).toBe(false);
@@ -144,8 +165,10 @@ describe('URL Resolver', () => {
       };
       
       const result = await resolveUrlId(
-        EntityType.FILING,
-        'Ab1C2d'
+        'filing',
+        'Ab1C2d',
+        mockDbConfig,
+        mockEntityConfig
       );
       
       expect(result.success).toBe(false);
@@ -164,8 +187,10 @@ describe('URL Resolver', () => {
       };
       
       const result = await resolveUrlId(
-        EntityType.USER,
-        'Ab1C2d'
+        'user',
+        'Ab1C2d',
+        mockDbConfig,
+        mockEntityConfig
       );
       
       expect(result.success).toBe(false);
@@ -178,6 +203,7 @@ describe('URL Resolver', () => {
       mockSupabaseResponse = {
         data: {
           id: 'insider-789',
+          insider_id: 'insider-789',
           name: 'Jane Smith',
           url_id: 'Ef3G4h'
         },
@@ -186,8 +212,10 @@ describe('URL Resolver', () => {
       
       // First call should hit the database
       const result1 = await resolveUrlId(
-        EntityType.INSIDER,
-        'Ef3G4h'
+        'insider',
+        'Ef3G4h',
+        mockDbConfig,
+        mockEntityConfig
       );
       
       expect(result1.success).toBe(true);
@@ -198,6 +226,7 @@ describe('URL Resolver', () => {
       mockSupabaseResponse = {
         data: {
           id: 'different-id',
+          insider_id: 'different-id',
           name: 'Different Name',
           url_id: 'Ef3G4h'
         },
@@ -206,8 +235,10 @@ describe('URL Resolver', () => {
       
       // Second call with same ID should use cache
       const result2 = await resolveUrlId(
-        EntityType.INSIDER,
-        'Ef3G4h'
+        'insider',
+        'Ef3G4h',
+        mockDbConfig,
+        mockEntityConfig
       );
       
       // Should still have the original data

@@ -2,22 +2,6 @@
  * Type definitions for the longurl package
  */
 /**
- * Legacy entity types enum for backward compatibility
- */
-export declare enum EntityType {
-    INSIDER = "insider",
-    COMPANY = "company",
-    FILING = "filing",
-    USER = "user"
-}
-/**
- * Legacy config interface for backward compatibility
- */
-export interface OpaqueUrlConfig {
-    idLength?: number;
-    domain?: string;
-}
-/**
  * Entity configuration for custom entity types
  */
 export interface EntityConfig {
@@ -118,7 +102,7 @@ export interface AnalyticsData {
  */
 export declare const DEFAULT_CONFIG: Partial<LongURLConfig>;
 /**
- * Legacy default config for backward compatibility
+ * Default database configuration
  */
 export declare const DEFAULT_DB_CONFIG: DatabaseConfig;
 /**

@@ -3,17 +3,7 @@
  * Type definitions for the longurl package
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_DB_CONFIG = exports.DEFAULT_CONFIG = exports.StorageStrategy = exports.EntityType = void 0;
-/**
- * Legacy entity types enum for backward compatibility
- */
-var EntityType;
-(function (EntityType) {
-    EntityType["INSIDER"] = "insider";
-    EntityType["COMPANY"] = "company";
-    EntityType["FILING"] = "filing";
-    EntityType["USER"] = "user";
-})(EntityType || (exports.EntityType = EntityType = {}));
+exports.DEFAULT_DB_CONFIG = exports.DEFAULT_CONFIG = exports.StorageStrategy = void 0;
 /**
  * Storage strategy for URLs
  */
@@ -32,7 +22,7 @@ exports.DEFAULT_CONFIG = {
     analytics: true
 };
 /**
- * Legacy default config for backward compatibility
+ * Default database configuration
  */
 exports.DEFAULT_DB_CONFIG = {
     strategy: StorageStrategy.LOOKUP_TABLE,

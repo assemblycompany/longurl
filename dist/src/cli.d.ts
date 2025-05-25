@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * CLI tool for batch generating opaque URLs for existing entities.
+ * CLI tool for batch generating URLs for existing entities.
  *
- * This utility helps in generating and updating opaque URL IDs
+ * This utility helps in generating and updating URL IDs
  * for entities that already exist in the database.
  */
 export {};

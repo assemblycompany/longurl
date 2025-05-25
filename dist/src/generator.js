@@ -1,8 +1,8 @@
 "use strict";
 /**
- * Opaque URL Generator
+ * URL Generator
  *
- * Generates unique, opaque URL IDs for various entity types.
+ * Generates unique URL IDs for any entity types.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateUrlId = generateUrlId;
@@ -11,20 +11,17 @@ const types_1 = require("../types");
 const utils_1 = require("../utils");
 const collision_1 = require("./collision");
 /**
- * Generate an opaque URL ID for an entity
+ * Generate a URL ID for an entity
  *
- * @param entityType Type of entity (insider, company, etc.)
+ * @param entityType Type of entity (any string)
  * @param entityId Original entity ID
- * @param config Configuration options
+ * @param options Configuration options
  * @returns Generated URL and result info
  */
-async function generateUrlId(entityType, entityId, config = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
+async function generateUrlId(entityType, entityId, options = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
     try {
-        // Merge with default configuration
-        const finalConfig = { ...types_1.DEFAULT_CONFIG, ...config };
-        const { idLength = 6 } = finalConfig;
-        const domain = config.domain || 'longurl.co';
-        // Generate initial opaque ID
+        const { idLength = 6, domain = 'longurl.co' } = options;
+        // Generate initial URL ID
         let urlId = (0, utils_1.generateBase62Id)(idLength);
         let attempts = 1;
         const MAX_ATTEMPTS = 5;
@@ -64,12 +61,12 @@ async function generateUrlId(entityType, entityId, config = {}, dbConfig = types
             urlId: '',
             shortUrl: '',
             success: false,
-            error: `Error generating opaque URL: ${error instanceof Error ? error.message : String(error)}`
+            error: `Error generating URL: ${error instanceof Error ? error.message : String(error)}`
         };
     }
 }
 /**
- * Validate whether a string is a valid opaque URL ID
+ * Validate whether a string is a valid URL ID
  *
  * @param urlId The URL ID to validate
  * @param idLength Expected length (default: 6)

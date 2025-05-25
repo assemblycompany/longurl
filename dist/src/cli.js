@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * CLI tool for batch generating opaque URLs for existing entities.
+ * CLI tool for batch generating URLs for existing entities.
  *
- * This utility helps in generating and updating opaque URL IDs
+ * This utility helps in generating and updating URL IDs
  * for entities that already exist in the database.
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -74,24 +74,23 @@ if (!supabaseUrl || !supabaseKey) {
 }
 const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseKey);
 /**
- * Process all entities of a specific type and generate URL IDs for them.
+ * Process entities of a specific type and generate URL IDs for them.
  *
  * @param entityType Type of entity to process
+ * @param tableName Database table name
+ * @param primaryKey Primary key column name
  * @param dbConfig Database configuration
  * @param limit Max number of entities to process in one batch
  * @param dryRun If true, don't actually update the database
  */
-async function processEntityType(entityType, dbConfig, limit = 100, dryRun = false) {
+async function processEntityType(entityType, tableName, primaryKey, dbConfig, limit = 100, dryRun = false) {
     console.log(`\nProcessing ${entityType} entities...`);
-    // Get table name based on entity type
-    const tableName = getTableFromEntityType(entityType);
-    const idColumn = getPrimaryKeyForEntityType(entityType);
     const urlIdColumn = dbConfig.urlIdColumn || 'url_id';
     // Fetch entities without URL IDs
     console.log(`Fetching ${entityType} entities without URL IDs (limit: ${limit})...`);
     let query = supabase
         .from(tableName)
-        .select(`${idColumn}, ${urlIdColumn}`)
+        .select(`${primaryKey}, ${urlIdColumn}`)
         .is(urlIdColumn, null)
         .limit(limit);
     const { data: entities, error } = await query;
@@ -108,16 +107,16 @@ async function processEntityType(entityType, dbConfig, limit = 100, dryRun = fal
     let success = 0;
     let failed = 0;
     for (const entity of entities) {
-        const entityId = entity[idColumn];
+        const entityId = entity[primaryKey];
         if (!entityId) {
-            console.error(`Entity is missing ${idColumn}, skipping`);
+            console.error(`Entity is missing ${primaryKey}, skipping`);
             failed++;
             continue;
         }
         console.log(`Processing ${entityType} with ID: ${entityId}`);
         try {
             // Generate URL ID
-            const result = await (0, generator_1.generateUrlId)(entityType, entityId.toString(), undefined, dbConfig);
+            const result = await (0, generator_1.generateUrlId)(entityType, entityId.toString(), {}, dbConfig);
             if (!result.success || !result.urlId) {
                 console.error(`Failed to generate URL ID for ${entityType} ${entityId}: ${result.error}`);
                 failed++;
@@ -129,13 +128,17 @@ async function processEntityType(entityType, dbConfig, limit = 100, dryRun = fal
             if (!dryRun) {
                 if (dbConfig.strategy === types_1.StorageStrategy.LOOKUP_TABLE) {
                     // Insert into lookup table
-                    const lookupTable = dbConfig.lookupTable || 'opaque_urls';
+                    const lookupTable = dbConfig.lookupTable || 'short_urls';
                     const { error: insertError } = await supabase
                         .from(lookupTable)
                         .insert({
                         url_id: urlId,
                         entity_id: entityId,
-                        entity_type: entityType
+                        entity_type: entityType,
+                        original_url: `/${entityType}/${entityId}`, // Default URL pattern
+                        click_count: 0,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
                     });
                     if (insertError) {
                         console.error(`Error updating lookup table for ${entityType} ${entityId}:`, insertError);
@@ -148,7 +151,7 @@ async function processEntityType(entityType, dbConfig, limit = 100, dryRun = fal
                     const { error: updateError } = await supabase
                         .from(tableName)
                         .update({ [urlIdColumn]: urlId })
-                        .eq(idColumn, entityId);
+                        .eq(primaryKey, entityId);
                     if (updateError) {
                         console.error(`Error updating ${entityType} ${entityId}:`, updateError);
                         failed++;
@@ -170,56 +173,20 @@ async function processEntityType(entityType, dbConfig, limit = 100, dryRun = fal
     return { success, failed, total: entities.length };
 }
 /**
- * Get table name for entity type
- */
-function getTableFromEntityType(entityType) {
-    switch (entityType) {
-        case types_1.EntityType.INSIDER:
-            return 'insiders';
-        case types_1.EntityType.COMPANY:
-            return 'companies';
-        case types_1.EntityType.FILING:
-            return 'filings';
-        case types_1.EntityType.USER:
-            return 'users';
-        default:
-            throw new Error(`Unknown entity type: ${entityType}`);
-    }
-}
-/**
- * Get primary key column for entity type
- */
-function getPrimaryKeyForEntityType(entityType) {
-    switch (entityType) {
-        case types_1.EntityType.INSIDER:
-            return 'insider_id';
-        case types_1.EntityType.COMPANY:
-            return 'company_id';
-        case types_1.EntityType.FILING:
-            return 'id';
-        case types_1.EntityType.USER:
-            return 'id';
-        default:
-            throw new Error(`Unknown entity type: ${entityType}`);
-    }
-}
-/**
  * Main CLI function
  */
 async function main() {
     const args = process.argv.slice(2);
     if (args.length === 0) {
-        console.log('Usage: opaque-urls-cli <command> [options]');
+        console.log('Usage: longurl-cli <command> [options]');
         console.log('');
         console.log('Commands:');
-        console.log('  generate <entity-type> [limit] [--dry-run]  Generate URL IDs for entities');
-        console.log('  generate-all [limit] [--dry-run]            Generate URL IDs for all entity types');
-        console.log('');
-        console.log('Entity types: insider, company, filing, user');
+        console.log('  generate <entity-type> <table-name> <primary-key> [limit] [--dry-run]');
+        console.log('    Generate URL IDs for entities in a specific table');
         console.log('');
         console.log('Examples:');
-        console.log('  opaque-urls-cli generate insider 50');
-        console.log('  opaque-urls-cli generate-all 100 --dry-run');
+        console.log('  longurl-cli generate product products id 50');
+        console.log('  longurl-cli generate user users user_id 100 --dry-run');
         return;
     }
     const command = args[0];
@@ -231,58 +198,31 @@ async function main() {
             url: supabaseUrl,
             key: supabaseKey
         },
-        lookupTable: 'opaque_urls',
+        lookupTable: 'short_urls',
         urlIdColumn: 'url_id'
     };
     if (command === 'generate') {
-        const entityTypeArg = args[1];
-        const limit = parseInt(args[2]) || 100;
-        if (!entityTypeArg) {
-            console.error('Error: Entity type is required');
-            console.error('Valid entity types: insider, company, filing, user');
-            process.exit(1);
-        }
-        // Validate entity type
-        const entityType = entityTypeArg.toLowerCase();
-        if (!Object.values(types_1.EntityType).includes(entityType)) {
-            console.error(`Error: Invalid entity type "${entityTypeArg}"`);
-            console.error('Valid entity types: insider, company, filing, user');
+        const entityType = args[1];
+        const tableName = args[2];
+        const primaryKey = args[3];
+        const limit = parseInt(args[4]) || 100;
+        if (!entityType || !tableName || !primaryKey) {
+            console.error('Error: entity-type, table-name, and primary-key are required');
+            console.error('Usage: longurl-cli generate <entity-type> <table-name> <primary-key> [limit] [--dry-run]');
             process.exit(1);
         }
         console.log(`Starting URL ID generation for ${entityType} entities...`);
+        console.log(`Table: ${tableName}`);
+        console.log(`Primary Key: ${primaryKey}`);
         console.log(`Limit: ${limit}`);
         console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
         console.log('');
-        const result = await processEntityType(entityType, dbConfig, limit, dryRun);
+        const result = await processEntityType(entityType, tableName, primaryKey, dbConfig, limit, dryRun);
         console.log('\n=== SUMMARY ===');
         console.log(`Total entities processed: ${result.total}`);
         console.log(`Successfully generated: ${result.success}`);
         console.log(`Failed: ${result.failed}`);
         if (result.failed > 0) {
-            process.exit(1);
-        }
-    }
-    else if (command === 'generate-all') {
-        const limit = parseInt(args[1]) || 100;
-        console.log('Starting URL ID generation for all entity types...');
-        console.log(`Limit per entity type: ${limit}`);
-        console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
-        console.log('');
-        const entityTypes = Object.values(types_1.EntityType);
-        let totalSuccess = 0;
-        let totalFailed = 0;
-        let totalProcessed = 0;
-        for (const entityType of entityTypes) {
-            const result = await processEntityType(entityType, dbConfig, limit, dryRun);
-            totalSuccess += result.success;
-            totalFailed += result.failed;
-            totalProcessed += result.total;
-        }
-        console.log('\n=== OVERALL SUMMARY ===');
-        console.log(`Total entities processed: ${totalProcessed}`);
-        console.log(`Successfully generated: ${totalSuccess}`);
-        console.log(`Failed: ${totalFailed}`);
-        if (totalFailed > 0) {
             process.exit(1);
         }
     }
