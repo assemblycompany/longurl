@@ -6,5 +6,6 @@
  */
 export { LongURL, StorageAdapter, SupabaseAdapter } from './src';
 export type { LongURLConfig, EntityConfig, GenerationResult, ResolutionResult, AnalyticsData, DatabaseConfig, StorageStrategy } from './types';
-export type { EntityData, AnalyticsData as AdapterAnalyticsData, AdapterConfig, SupabaseConfig } from './src/adapters/types';
+export type { EntityData, AnalyticsData as AdapterAnalyticsData, AdapterConfig } from './src/core/storage/types';
+export type { SupabaseConfig } from './src/adapters/supabase/types';
 export { generateBase62Id, isValidUrlId } from './utils';

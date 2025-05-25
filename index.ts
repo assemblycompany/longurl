@@ -23,9 +23,10 @@ export type {
 export type { 
   EntityData, 
   AnalyticsData as AdapterAnalyticsData, 
-  AdapterConfig,
-  SupabaseConfig 
-} from './src/adapters/types';
+  AdapterConfig
+} from './src/core/storage/types';
+
+export type { SupabaseConfig } from './src/adapters/supabase/types';
 
 // Export utilities for advanced usage
 export { generateBase62Id, isValidUrlId } from './utils'; 

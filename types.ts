@@ -6,7 +6,7 @@
  * Core Types for LongURL
  */
 
-import { StorageAdapter } from './src/adapters/StorageAdapter';
+import { StorageAdapter } from './src/core/storage/StorageAdapter';
 
 /**
  * Entity configuration for custom entity types

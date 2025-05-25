@@ -6,8 +6,9 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { StorageAdapter } from './StorageAdapter.js';
-import { EntityData, AnalyticsData, SupabaseConfig } from './types.js';
+import { StorageAdapter } from '../../core/storage/StorageAdapter.js';
+import { EntityData, AnalyticsData } from '../../core/storage/types.js';
+import { SupabaseConfig } from './types.js';
 
 export class SupabaseAdapter extends StorageAdapter {
   private client: SupabaseClient<any>;

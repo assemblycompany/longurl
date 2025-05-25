@@ -1,5 +1,5 @@
 /**
- * Storage Adapter Interface
+ * Core Storage Adapter Interface
  * 
  * Defines the contract that all storage adapters must implement.
  * This enables LongURL to work with different storage backends.
