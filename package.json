@@ -1,14 +1,16 @@
 {
   "name": "longurl",
   "version": "0.1.0",
-  "description": "Programmable URL shortener for developers - infra-as-code for URLs",
+  "description": "LongURL - Programmable URL shortener with entity-driven design and production-ready infrastructure",
   "keywords": [
-    "url",
-    "shortener",
-    "bitly",
+    "longurl",
+    "url-shortener",
+    "typescript",
+    "entity-driven",
+    "supabase",
+    "infrastructure",
     "developer-tools",
-    "analytics",
-    "redirect"
+    "analytics"
   ],
   "author": "LongURL Team",
   "license": "MIT",
@@ -40,7 +42,6 @@
     "dotenv": "^16.3.1",
     "ioredis": "^5.3.2",
     "nanoid": "^3.3.4",
-    "pnpm": "^10.11.0",
     "zod": "^3.22.2"
   },
   "devDependencies": {

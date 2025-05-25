@@ -1,6 +1,8 @@
 /**
  * LongURL - Programmable URL Shortener
  * 
+ * Infrastructure-as-code for URLs. Built for developers who need control.
+ * 
  * A developer-friendly URL shortener with entity-based organization,
  * collision detection, and analytics tracking.
  */
