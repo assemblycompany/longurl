@@ -3,24 +3,6 @@
  */
 
 /**
- * Legacy entity types enum for backward compatibility
- */
-export enum EntityType {
-  INSIDER = 'insider',
-  COMPANY = 'company', 
-  FILING = 'filing',
-  USER = 'user'
-}
-
-/**
- * Legacy config interface for backward compatibility
- */
-export interface OpaqueUrlConfig {
-  idLength?: number;
-  domain?: string;
-}
-
-/**
  * Entity configuration for custom entity types
  */
 export interface EntityConfig {
@@ -149,7 +131,7 @@ export const DEFAULT_CONFIG: Partial<LongURLConfig> = {
 };
 
 /**
- * Legacy default config for backward compatibility
+ * Default database configuration
  */
 export const DEFAULT_DB_CONFIG: DatabaseConfig = {
   strategy: StorageStrategy.LOOKUP_TABLE,

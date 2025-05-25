@@ -1,13 +1,10 @@
 /**
- * Opaque URL Generator
+ * URL Generator
  * 
- * Generates unique, opaque URL IDs for various entity types.
+ * Generates unique URL IDs for any entity types.
  */
 
 import { 
-  EntityType, 
-  OpaqueUrlConfig, 
-  DEFAULT_CONFIG, 
   GenerationResult,
   DatabaseConfig,
   DEFAULT_DB_CONFIG
@@ -16,26 +13,26 @@ import { generateBase62Id, isValidUrlId, buildEntityUrl } from '../utils';
 import { checkCollision } from './collision';
 
 /**
- * Generate an opaque URL ID for an entity
+ * Generate a URL ID for an entity
  * 
- * @param entityType Type of entity (insider, company, etc.)
+ * @param entityType Type of entity (any string)
  * @param entityId Original entity ID
- * @param config Configuration options
+ * @param options Configuration options
  * @returns Generated URL and result info
  */
 export async function generateUrlId(
-  entityType: EntityType,
+  entityType: string,
   entityId: string,
-  config: OpaqueUrlConfig = {},
+  options: {
+    idLength?: number;
+    domain?: string;
+  } = {},
   dbConfig: DatabaseConfig = DEFAULT_DB_CONFIG
 ): Promise<GenerationResult> {
   try {
-    // Merge with default configuration
-    const finalConfig = { ...DEFAULT_CONFIG, ...config };
-    const { idLength = 6 } = finalConfig;
-    const domain = config.domain || 'longurl.co';
+    const { idLength = 6, domain = 'longurl.co' } = options;
     
-    // Generate initial opaque ID
+    // Generate initial URL ID
     let urlId = generateBase62Id(idLength);
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
@@ -81,13 +78,13 @@ export async function generateUrlId(
       urlId: '',
       shortUrl: '',
       success: false,
-      error: `Error generating opaque URL: ${error instanceof Error ? error.message : String(error)}`
+      error: `Error generating URL: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 }
 
 /**
- * Validate whether a string is a valid opaque URL ID
+ * Validate whether a string is a valid URL ID
  * 
  * @param urlId The URL ID to validate
  * @param idLength Expected length (default: 6)
