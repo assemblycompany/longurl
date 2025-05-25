@@ -12,11 +12,6 @@ export interface SupabaseConfig {
       enabled: boolean;
       params?: Record<string, any>;
     };
-    retries?: {
-      maxAttempts?: number;
-      backoffMs?: number;
-      retryableErrors?: string[];
-    };
     cache?: {
       enabled?: boolean;
       ttlMs?: number;

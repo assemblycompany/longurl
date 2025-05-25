@@ -183,10 +183,10 @@ export function logSupabaseError(error: SupabaseAdapterError, context?: Record<s
 }
 
 /**
- * Check if error is retryable
+ * Check if error indicates a temporary issue (for user's retry logic)
  */
-export function isRetryableError(error: any): boolean {
-  const retryableCodes = new Set([
+export function isTemporaryError(error: any): boolean {
+  const temporaryCodes = new Set([
     'PGRST301', // Connection timeout
     'PGRST302', // Connection failed
     'ECONNRESET',
@@ -194,7 +194,7 @@ export function isRetryableError(error: any): boolean {
     'ETIMEDOUT'
   ]);
 
-  return retryableCodes.has(error?.code);
+  return temporaryCodes.has(error?.code);
 }
 
 /**

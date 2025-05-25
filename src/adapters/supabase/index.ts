@@ -10,7 +10,7 @@ export {
   SupabaseAdapterError, 
   parseSupabaseError, 
   logSupabaseError, 
-  isRetryableError,
+  isTemporaryError,
   getSchemaHelp 
 } from './errors.js';
 export type { SupabaseErrorDetails } from './errors.js'; 
