@@ -3,24 +3,17 @@
  * Type definitions for the longurl package
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_DB_CONFIG = exports.DEFAULT_CONFIG = exports.StorageStrategy = void 0;
+exports.DEFAULT_DB_CONFIG = exports.StorageStrategy = void 0;
 /**
  * Storage strategy for URLs
  */
 var StorageStrategy;
 (function (StorageStrategy) {
     /** Store URLs in a separate lookup table */
-    StorageStrategy["LOOKUP_TABLE"] = "lookup_table";
+    StorageStrategy["LOOKUP_TABLE"] = "LOOKUP_TABLE";
     /** Store URLs directly in the entity tables */
-    StorageStrategy["INLINE"] = "inline";
+    StorageStrategy["INLINE"] = "INLINE";
 })(StorageStrategy || (exports.StorageStrategy = StorageStrategy = {}));
-/**
- * Default configuration values
- */
-exports.DEFAULT_CONFIG = {
-    idLength: 6,
-    analytics: true
-};
 /**
  * Default database configuration
  */

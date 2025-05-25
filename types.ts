@@ -3,6 +3,12 @@
  */
 
 /**
+ * Core Types for LongURL
+ */
+
+import { StorageAdapter } from './src/adapters/StorageAdapter';
+
+/**
  * Entity configuration for custom entity types
  */
 export interface EntityConfig {
@@ -19,10 +25,10 @@ export interface EntityConfig {
  */
 export enum StorageStrategy {
   /** Store URLs in a separate lookup table */
-  LOOKUP_TABLE = 'lookup_table',
+  LOOKUP_TABLE = 'LOOKUP_TABLE',
   
   /** Store URLs directly in the entity tables */
-  INLINE = 'inline'
+  INLINE = 'INLINE'
 }
 
 /**
@@ -50,19 +56,16 @@ export interface DatabaseConfig {
  */
 export interface LongURLConfig {
   /** Custom entity configurations */
-  entities: Record<string, EntityConfig>;
-  
-  /** Database configuration */
-  database: DatabaseConfig;
+  entities?: Record<string, EntityConfig>;
   
   /** Base domain for shortened URLs */
-  domain: string;
+  baseUrl?: string;
   
-  /** Default URL ID length */
-  idLength?: number;
+  /** New adapter pattern */
+  adapter?: any; // Will be properly typed when adapters are imported
   
-  /** Enable analytics tracking */
-  analytics?: boolean;
+  /** Legacy database config (for backward compatibility) */
+  database?: DatabaseConfig;
 }
 
 /**
@@ -70,10 +73,19 @@ export interface LongURLConfig {
  */
 export interface GenerationResult {
   /** Generated URL ID */
-  urlId: string;
+  urlId?: string;
   
   /** Full shortened URL */
-  shortUrl: string;
+  shortUrl?: string;
+  
+  /** Original long URL */
+  originalUrl?: string;
+  
+  /** Entity type */
+  entityType?: string;
+  
+  /** Original entity ID */
+  entityId?: string;
   
   /** Whether generation was successful */
   success: boolean;
@@ -95,6 +107,18 @@ export interface ResolutionResult<T = any> {
   /** Entity type */
   entityType?: string;
   
+  /** Original long URL */
+  originalUrl?: string;
+  
+  /** URL ID */
+  urlId?: string;
+  
+  /** Click count */
+  clickCount?: number;
+  
+  /** Metadata (optional) */
+  metadata?: Record<string, any>;
+  
   /** Whether resolution was successful */
   success: boolean;
   
@@ -106,29 +130,39 @@ export interface ResolutionResult<T = any> {
  * Analytics data structure
  */
 export interface AnalyticsData {
+  /** URL ID */
+  urlId: string;
+  
   /** Total clicks across all URLs */
   totalClicks: number;
   
-  /** Clicks broken down by entity type */
-  clicksByEntity: Record<string, number>;
+  /** When the URL was created */
+  createdAt: string;
   
-  /** Recent click events */
-  recentClicks: Array<{
-    urlId: string;
-    entityType: string;
-    timestamp: Date;
+  /** When the URL was last updated */
+  updatedAt: string;
+  
+  /** Last click timestamp */
+  lastClickAt?: string;
+  
+  /** Click history */
+  clickHistory?: Array<{
+    /** Timestamp of the click */
+    timestamp: string;
+    
+    /** User agent of the click */
     userAgent?: string;
+    
+    /** Referer of the click */
+    referer?: string;
+    
+    /** IP address of the click */
     ip?: string;
+    
+    /** Country of the click */
+    country?: string;
   }>;
 }
-
-/**
- * Default configuration values
- */
-export const DEFAULT_CONFIG: Partial<LongURLConfig> = {
-  idLength: 6,
-  analytics: true
-};
 
 /**
  * Default database configuration
