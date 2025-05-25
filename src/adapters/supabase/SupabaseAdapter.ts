@@ -9,6 +9,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { StorageAdapter } from '../../core/storage/StorageAdapter.js';
 import { EntityData, AnalyticsData } from '../../core/storage/types.js';
 import { SupabaseConfig } from './types.js';
+import { parseSupabaseError, logSupabaseError, isRetryableError } from './errors.js';
 
 export class SupabaseAdapter extends StorageAdapter {
   private client: SupabaseClient<any, 'public', any>;
@@ -55,34 +56,45 @@ export class SupabaseAdapter extends StorageAdapter {
   }
 
   /**
-   * Execute operation with retry logic
+   * Execute operation with retry logic and detailed error handling
    */
   private async withRetry<T>(
     operation: () => Promise<T>,
     operationName: string
   ): Promise<T> {
-    let lastError: Error;
+    let lastError: any;
     
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
-        lastError = error as Error;
+        lastError = error;
+        
+        // Parse and enhance the error
+        const enhancedError = parseSupabaseError(error, operationName, this.tableName);
         
         // Check if error is retryable
-        const errorCode = (error as any)?.code;
-        if (!this.retryableErrors.has(errorCode) || attempt === this.maxRetries) {
-          throw error;
+        if (!isRetryableError(error) || attempt === this.maxRetries) {
+          // Log detailed error information
+          logSupabaseError(enhancedError, {
+            operation: operationName,
+            attempt: attempt + 1,
+            tableName: this.tableName
+          });
+          throw enhancedError;
         }
         
         // Exponential backoff
         const delay = this.backoffMs * Math.pow(2, attempt);
-        console.warn(`${operationName} failed (attempt ${attempt + 1}), retrying in ${delay}ms:`, errorCode);
+        console.warn(`${operationName} failed (attempt ${attempt + 1}), retrying in ${delay}ms:`, enhancedError.code);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
-    throw lastError!;
+    // This shouldn't be reached, but just in case
+    const finalError = parseSupabaseError(lastError, operationName, this.tableName);
+    logSupabaseError(finalError);
+    throw finalError;
   }
 
   /**
