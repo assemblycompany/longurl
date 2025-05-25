@@ -2,13 +2,13 @@
  * LongURL - Programmable URL Shortener
  * 
  * Main entry point for the longurl package.
- * Exports the LongURL class and all related types and adapters.
+ * Exports the LongURL class with built-in Supabase support.
  */
 
-// Export the main LongURL class and adapters
-export { LongURL, StorageAdapter, SupabaseAdapter } from './src';
+// Main export - most users only need this
+export { LongURL } from './src';
 
-// Export all types
+// Export all types for TypeScript users
 export type { 
   LongURLConfig, 
   EntityConfig, 
@@ -19,14 +19,25 @@ export type {
   StorageStrategy
 } from './types';
 
-// Export adapter types
+// Export core storage types for advanced users
 export type { 
   EntityData, 
   AnalyticsData as AdapterAnalyticsData, 
   AdapterConfig
 } from './src/core/storage/types';
 
-export type { SupabaseConfig } from './src/adapters/supabase/types';
-
 // Export utilities for advanced usage
-export { generateBase62Id, isValidUrlId } from './utils'; 
+export { generateBase62Id, isValidUrlId } from './utils';
+
+// Advanced exports (for custom adapters and error handling)
+// Most users won't need these
+export { StorageAdapter } from './src/core/storage/StorageAdapter';
+export { 
+  SupabaseAdapter,
+  SupabaseAdapterError, 
+  parseSupabaseError, 
+  logSupabaseError, 
+  isTemporaryError,
+  getSchemaHelp 
+} from './src/adapters/supabase';
+export type { SupabaseConfig, SupabaseErrorDetails } from './src/adapters/supabase'; 

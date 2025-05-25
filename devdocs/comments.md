@@ -1,12 +1,16 @@
-src/
-├── adapters/
-│   ├── supabase/
-│   │   ├── SupabaseAdapter.ts         # Main adapter class
-│   │   ├── supabase.types.ts          # SupabaseConfig, schema types
-│   │   ├── supabase.utils.ts          # Optional helpers (e.g. cache mgmt)
-│   │   └── supabase.schema.sql        # Table definitions (optional)
-├── core/
-│   ├── storage/
-│   │   ├── StorageAdapter.ts          # Abstract base class
-│   │   └── types.ts                   # Shared types: EntityData, AnalyticsData
-├── index.ts                           # Main export entry
+What if microservices were just npm packages?
+
+Instead of:
+```
+fetch('https://api.service.com/shorten')
+```
+
+What about:
+```javascript
+import { URLShortener } from '@longurl/core'
+const short = await shortener.create(url)
+```
+
+No vendor lock-in. Deploy anywhere. Compose as needed. Monetize individual packages.
+
+Building this with longurl.co - curious if others see value in "microservices as packages" vs traditional SaaS?

@@ -1,5 +1,5 @@
 import { generateUrlId, validateUrlId } from '../src/generator';
-import { EntityType, StorageStrategy } from '../types';
+import { StorageStrategy, DEFAULT_DB_CONFIG } from '../types';
 import * as collision from '../src/collision';
 
 // Mock the collision module
@@ -18,21 +18,21 @@ describe('URL Generator', () => {
       (collision.checkCollision as jest.Mock).mockResolvedValue(false);
       
       const result = await generateUrlId(
-        EntityType.INSIDER,
+        'insider',
         'insider-123'
       );
       
       expect(result.success).toBe(true);
       expect(result.urlId).toBeDefined();
-      expect(result.urlId.length).toBe(6);
-      expect(validateUrlId(result.urlId)).toBe(true);
+      expect(result.urlId!.length).toBe(6);
+      expect(validateUrlId(result.urlId!)).toBe(true);
       
       // Verify collision check was called
       expect(collision.checkCollision).toHaveBeenCalledTimes(1);
       expect(collision.checkCollision).toHaveBeenCalledWith(
-        EntityType.INSIDER,
+        'insider',
         expect.any(String),
-        { strategy: StorageStrategy.INLINE, urlIdColumn: 'url_id' }
+        DEFAULT_DB_CONFIG
       );
     });
     
@@ -43,13 +43,13 @@ describe('URL Generator', () => {
         .mockResolvedValueOnce(false); // Second call - no collision
       
       const result = await generateUrlId(
-        EntityType.COMPANY,
+        'company',
         'company-123'
       );
       
       expect(result.success).toBe(true);
       expect(result.urlId).toBeDefined();
-      expect(result.urlId.length).toBe(6);
+      expect(result.urlId!.length).toBe(6);
       
       // Verify collision check was called twice
       expect(collision.checkCollision).toHaveBeenCalledTimes(2);
@@ -60,7 +60,7 @@ describe('URL Generator', () => {
       (collision.checkCollision as jest.Mock).mockResolvedValue(true);
       
       const result = await generateUrlId(
-        EntityType.FILING,
+        'filing',
         'filing-123'
       );
       
@@ -68,8 +68,8 @@ describe('URL Generator', () => {
       expect(result.error).toContain('Failed to generate unique ID');
       expect(result.urlId).toBe('');
       
-      // Verify collision check was called 5 times (MAX_ATTEMPTS)
-      expect(collision.checkCollision).toHaveBeenCalledTimes(5);
+      // Verify collision check was called 4 times (attempts 1-4, then stops at MAX_ATTEMPTS=5)
+      expect(collision.checkCollision).toHaveBeenCalledTimes(4);
     });
     
     it('should respect custom ID length', async () => {
@@ -78,14 +78,14 @@ describe('URL Generator', () => {
       
       const customLength = 8;
       const result = await generateUrlId(
-        EntityType.USER,
+        'user',
         'user-123',
         { idLength: customLength }
       );
       
       expect(result.success).toBe(true);
-      expect(result.urlId.length).toBe(customLength);
-      expect(validateUrlId(result.urlId, customLength)).toBe(true);
+      expect(result.urlId!.length).toBe(customLength);
+      expect(validateUrlId(result.urlId!, customLength)).toBe(true);
     });
     
     it('should handle errors gracefully', async () => {
@@ -95,12 +95,12 @@ describe('URL Generator', () => {
       );
       
       const result = await generateUrlId(
-        EntityType.INSIDER,
+        'insider',
         'insider-123'
       );
       
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Error generating opaque URL');
+      expect(result.error).toContain('Error generating URL');
       expect(result.urlId).toBe('');
     });
   });

@@ -45,9 +45,23 @@ export interface LongURLConfig {
     entities?: Record<string, EntityConfig>;
     /** Base domain for shortened URLs */
     baseUrl?: string;
-    /** New adapter pattern */
+    /** Supabase configuration (default database) */
+    supabase?: {
+        url?: string;
+        key?: string;
+        options?: {
+            schema?: string;
+            headers?: Record<string, string>;
+            cache?: {
+                enabled?: boolean;
+                ttlMs?: number;
+                maxSize?: number;
+            };
+        };
+    };
+    /** Advanced: Custom adapter injection */
     adapter?: any;
-    /** Legacy database config (for backward compatibility) */
+    /** Legacy: Database config (for backward compatibility) */
     database?: DatabaseConfig;
 }
 /**

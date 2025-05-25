@@ -61,10 +61,25 @@ export interface LongURLConfig {
   /** Base domain for shortened URLs */
   baseUrl?: string;
   
-  /** New adapter pattern */
+  /** Supabase configuration (default database) */
+  supabase?: {
+    url?: string;  // defaults to SUPABASE_URL env var
+    key?: string;  // defaults to SUPABASE_SERVICE_ROLE_KEY env var
+    options?: {
+      schema?: string;
+      headers?: Record<string, string>;
+      cache?: {
+        enabled?: boolean;
+        ttlMs?: number;
+        maxSize?: number;
+      };
+    };
+  };
+  
+  /** Advanced: Custom adapter injection */
   adapter?: any; // Will be properly typed when adapters are imported
   
-  /** Legacy database config (for backward compatibility) */
+  /** Legacy: Database config (for backward compatibility) */
   database?: DatabaseConfig;
 }
 

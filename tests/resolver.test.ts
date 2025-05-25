@@ -2,23 +2,19 @@ import { resolveUrlId, clearResolutionCache } from '../src/resolver';
 import { StorageStrategy } from '../types';
 
 // Mock the Supabase client
+const mockSingle = jest.fn();
+const mockEq = jest.fn();
+const mockSelect = jest.fn(() => ({ eq: mockEq }));
+const mockFrom = jest.fn(() => ({ select: mockSelect }));
+
+// Set up the chaining for eq calls
+mockEq.mockImplementation(() => ({ eq: mockEq, single: mockSingle }));
+
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            single: jest.fn(() => mockSupabaseResponse)
-          })),
-          single: jest.fn(() => mockSupabaseResponse)
-        }))
-      }))
-    }))
+    from: mockFrom
   }))
 }));
-
-// Shared mock response for Supabase
-let mockSupabaseResponse: { data: any; error: any } = { data: null, error: null };
 
 describe('URL Resolver', () => {
   // Set environment variables for tests
@@ -28,8 +24,11 @@ describe('URL Resolver', () => {
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-key';
     
-    // Reset mock response
-    mockSupabaseResponse = { data: null, error: null };
+    // Reset all mocks
+    jest.clearAllMocks();
+    
+    // Reset the mock implementation
+    mockEq.mockImplementation(() => ({ eq: mockEq, single: mockSingle }));
     
     // Clear cache between tests
     clearResolutionCache();
@@ -55,16 +54,15 @@ describe('URL Resolver', () => {
   describe('resolveUrlId', () => {
     it('should resolve an inline URL ID to its entity', async () => {
       // Mock a successful response
-      mockSupabaseResponse = {
-        data: {
-          id: 'db-123',
-          insider_id: 'insider-123',
-          name: 'John Doe',
-          position: 'CEO',
-          url_id: 'Ab1C2d'
-        },
-        error: null
+      const mockData = {
+        id: 'db-123',
+        insider_id: 'insider-123',
+        name: 'John Doe',
+        position: 'CEO',
+        url_id: 'Ab1C2d'
       };
+      
+      mockSingle.mockResolvedValue({ data: mockData, error: null });
       
       const result = await resolveUrlId(
         'insider',
@@ -74,47 +72,29 @@ describe('URL Resolver', () => {
       );
       
       expect(result.success).toBe(true);
-      expect(result.entity).toEqual(mockSupabaseResponse.data);
+      expect(result.entity).toEqual(mockData);
       expect(result.entityId).toBe('insider-123');
       expect(result.entityType).toBe('insider');
     });
     
     it('should resolve a lookup table URL ID to its entity', async () => {
       // Mock successful lookup table response
-      mockSupabaseResponse = {
-        data: {
-          entity_id: 'company-456',
-          entity_type: 'company'
-        },
-        error: null
+      const lookupData = {
+        entity_id: 'company-456',
+        entity_type: 'company',
+        original_url: 'https://example.com'
       };
       
-      // Second response for the entity itself
-      const secondResponse = {
-        data: {
-          company_id: 'company-456',
-          company_name: 'Acme Corp',
-          ticker: 'ACME'
-        },
-        error: null
+      const entityData = {
+        company_id: 'company-456',
+        company_name: 'Acme Corp',
+        ticker: 'ACME'
       };
       
-      // Override the mock for this specific test
-      const mockFrom = jest.fn(() => ({
-        select: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              single: jest.fn(() => mockSupabaseResponse)
-            })),
-            single: jest.fn(() => secondResponse)
-          }))
-        }))
-      }));
-      
-      // @ts-ignore: Mocking the supabase client
-      require('@supabase/supabase-js').createClient.mockReturnValue({
-        from: mockFrom
-      });
+      // First call returns lookup data, second call returns entity data
+      mockSingle
+        .mockResolvedValueOnce({ data: lookupData, error: null })
+        .mockResolvedValueOnce({ data: entityData, error: null });
       
       const result = await resolveUrlId(
         'company',
@@ -131,7 +111,7 @@ describe('URL Resolver', () => {
       );
       
       expect(result.success).toBe(true);
-      expect(result.entity).toEqual(secondResponse.data);
+      expect(result.entity).toEqual(entityData);
       expect(result.entityId).toBe('company-456');
       expect(result.entityType).toBe('company');
       
@@ -156,13 +136,13 @@ describe('URL Resolver', () => {
     
     it('should return error when URL ID not found', async () => {
       // Mock not found response
-      mockSupabaseResponse = {
+      mockSingle.mockResolvedValue({
         data: null,
         error: {
           message: 'No rows found',
           code: 'PGRST116'
         }
-      };
+      });
       
       const result = await resolveUrlId(
         'filing',
@@ -178,13 +158,13 @@ describe('URL Resolver', () => {
     
     it('should handle database errors gracefully', async () => {
       // Mock database error
-      mockSupabaseResponse = {
+      mockSingle.mockResolvedValue({
         data: null,
         error: {
           message: 'Database connection error',
           code: 'CONNECTION_ERROR'
         }
-      };
+      });
       
       const result = await resolveUrlId(
         'user',
@@ -200,15 +180,14 @@ describe('URL Resolver', () => {
     
     it('should use cached results when available', async () => {
       // First call - mock successful response
-      mockSupabaseResponse = {
-        data: {
-          id: 'insider-789',
-          insider_id: 'insider-789',
-          name: 'Jane Smith',
-          url_id: 'Ef3G4h'
-        },
-        error: null
+      const mockData = {
+        id: 'insider-789',
+        insider_id: 'insider-789',
+        name: 'Jane Smith',
+        url_id: 'Ef3G4h'
       };
+      
+      mockSingle.mockResolvedValue({ data: mockData, error: null });
       
       // First call should hit the database
       const result1 = await resolveUrlId(
@@ -219,11 +198,10 @@ describe('URL Resolver', () => {
       );
       
       expect(result1.success).toBe(true);
-      expect(result1.entity).toEqual(mockSupabaseResponse.data);
+      expect(result1.entity).toEqual(mockData);
       
-      // Change the mock data - but this shouldn't affect the second call
-      // because it should use the cached value
-      mockSupabaseResponse = {
+      // Reset the mock to return different data
+      mockSingle.mockResolvedValue({
         data: {
           id: 'different-id',
           insider_id: 'different-id',
@@ -231,9 +209,9 @@ describe('URL Resolver', () => {
           url_id: 'Ef3G4h'
         },
         error: null
-      };
+      });
       
-      // Second call with same ID should use cache
+      // Second call with same ID should use cache (not hit database again)
       const result2 = await resolveUrlId(
         'insider',
         'Ef3G4h',
@@ -241,10 +219,13 @@ describe('URL Resolver', () => {
         mockEntityConfig
       );
       
-      // Should still have the original data
+      // Should still have the original data from cache
       expect(result2.success).toBe(true);
       expect(result2.entity).toEqual(result1.entity);
       expect(result2.entity.name).toBe('Jane Smith');
+      
+      // Database should only have been called once (for the first request)
+      expect(mockSingle).toHaveBeenCalledTimes(1);
     });
   });
 }); 

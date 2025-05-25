@@ -22,22 +22,73 @@ export class LongURL {
   private config: LongURLConfig;
   private adapter: StorageAdapter;
 
-  constructor(config: LongURLConfig) {
+  constructor(config: LongURLConfig = {}) {
     this.config = config;
     
-    // Initialize adapter based on config
+    // Progressive disclosure: Zero config -> Simple config -> Advanced config
     if (config.adapter) {
-      // New adapter pattern
+      // Level 3: Advanced - Custom adapter injection
       this.adapter = config.adapter;
+    } else if (config.supabase || this.hasSupabaseEnvVars()) {
+      // Level 1 & 2: Zero config or Simple Supabase config
+      const supabaseConfig = this.buildSupabaseConfig(config.supabase);
+      this.adapter = new SupabaseAdapter(supabaseConfig);
     } else if (config.database) {
-      // Legacy database config - create SupabaseAdapter
+      // Legacy: Backward compatibility
       this.adapter = new SupabaseAdapter({
         url: config.database.connection.url,
         key: config.database.connection.key
       });
     } else {
-      throw new Error('Either adapter or database configuration is required');
+      throw new Error(
+        'LongURL requires configuration. Choose one:\n\n' +
+        '1. Environment variables (recommended):\n' +
+        '   • Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY\n' +
+        '   • Then: new LongURL()\n\n' +
+        '2. Direct configuration:\n' +
+        '   • new LongURL({ supabase: { url, key } })\n\n' +
+        '3. Custom adapter:\n' +
+        '   • new LongURL({ adapter: customAdapter })\n\n' +
+        'Environment setup help:\n' +
+        '• Node.js: import "dotenv/config" before importing LongURL\n' +
+        '• Next.js: Add to .env.local file\n' +
+        '• Vercel/Netlify: Set in project settings'
+      );
     }
+  }
+
+  /**
+   * Check if Supabase environment variables are available
+   */
+  private hasSupabaseEnvVars(): boolean {
+    return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  }
+
+  /**
+   * Build Supabase configuration with environment variable fallbacks
+   */
+  private buildSupabaseConfig(userConfig?: LongURLConfig['supabase']) {
+    const url = userConfig?.url || process.env.SUPABASE_URL;
+    const key = userConfig?.key || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+      throw new Error(
+        'Supabase configuration incomplete. Provide:\n' +
+        '• supabase.url and supabase.key in config, OR\n' +
+        '• SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables\n\n' +
+        'Environment setup examples:\n' +
+        '• Node.js: import "dotenv/config" before importing LongURL\n' +
+        '• Next.js: Add variables to .env.local\n' +
+        '• Vercel: Set in project settings\n' +
+        '• Docker: Use -e flags or env_file'
+      );
+    }
+
+    return {
+      url,
+      key,
+      options: userConfig?.options
+    };
   }
 
   /**
