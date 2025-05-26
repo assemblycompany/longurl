@@ -1,56 +1,78 @@
-**Yes, this is WAY too much for a weekend launch.**
+betatable@Mac opaque-urls-v01 % node test-sample.js
+🚀 Testing LongURL with Amazon sample...
 
-## Reality Check for MVP Scale
+📝 Original URL:
+https://www.amazon.com/dp/B0D3M8QYWL?ref=cm_sw_r_cso_cp_apin_dp_WZTG72PJC2YCXA83RWBF&ref_=cm_sw_r_cso_cp_apin_dp_WZTG72PJC2YCXA83RWBF&social_share=cm_sw_r_cso_cp_apin_dp_WZTG72PJC2YCXA83RWBF&titleSource=avft-a&previewDoh=1&th=1
 
-**YC/indie hacker teams typically have:**
-- 1K-100K total URLs across all entity types
-- Maybe 1M URLs if they become hugely successful
+📏 Length: 227 characters
 
-**Your current 6-character Base62:**
-- 56.8 billion combinations
-- Collision probability at 100K URLs: ~0.000001%
-- This is a non-problem for your target market
-
-## What Actually Matters for Weekend Launch
-
-**Collision handling you need:**
-```typescript
-// Simple retry with database constraint
-try {
-  await save(urlId, data);
-} catch (uniqueConstraintError) {
-  // Regenerate and try once more
-  urlId = generateNewId();
-  await save(urlId, data);
+⚡ Shortening URL...
+Error checking collision: TypeError: fetch failed
+🔥 Supabase Adapter Error: {
+  code: 'UNKNOWN',
+  message: 'save failed: TypeError: fetch failed',
+  suggestion: 'Check the error details and Supabase logs for more information. This might be a network issue or unexpected database constraint.',
+  sqlHint: undefined,
+  docsUrl: 'https://supabase.com/docs/guides/platform/logs',
+  context: { operation: 'save', tableName: 'short_urls' },
+  originalError: {
+    message: 'TypeError: fetch failed',
+    details: 'TypeError: fetch failed\n' +
+      '    at node:internal/deps/undici/undici:13502:13\n' +
+      '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+      '    at async SupabaseAdapter.save (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/adapters/supabase/SupabaseAdapter.js:107:31)\n' +
+      '    at async LongURL.shorten (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/index.js:111:13)\n' +
+      '    at async testLongURL (/Users/betatable/Desktop/beastmode/opaque-urls-v01/test-sample.js:47:20)',
+    hint: '',
+    code: ''
+  }
 }
-```
+🔥 Supabase Adapter Error: {
+  code: 'UNKNOWN',
+  message: 'save failed: save failed: TypeError: fetch failed',
+  suggestion: 'Check the error details and Supabase logs for more information. This might be a network issue or unexpected database constraint.',
+  sqlHint: undefined,
+  docsUrl: 'https://supabase.com/docs/guides/platform/logs',
+  context: { operation: 'save', tableName: 'short_urls' },
+  originalError: SupabaseAdapterError: save failed: TypeError: fetch failed
+      at parseSupabaseError (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/adapters/supabase/errors.js:124:20)
+      at SupabaseAdapter.handleError (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/adapters/supabase/SupabaseAdapter.js:40:66)
+      at SupabaseAdapter.save (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/adapters/supabase/SupabaseAdapter.js:119:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async LongURL.shorten (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/index.js:111:13)
+      at async testLongURL (/Users/betatable/Desktop/beastmode/opaque-urls-v01/test-sample.js:47:20) {
+    code: 'UNKNOWN',
+    suggestion: 'Check the error details and Supabase logs for more information. This might be a network issue or unexpected database constraint.',
+    sqlHint: undefined,
+    docsUrl: 'https://supabase.com/docs/guides/platform/logs',
+    originalError: {
+      message: 'TypeError: fetch failed',
+      details: 'TypeError: fetch failed\n' +
+        '    at node:internal/deps/undici/undici:13502:13\n' +
+        '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+        '    at async SupabaseAdapter.save (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/adapters/supabase/SupabaseAdapter.js:107:31)\n' +
+        '    at async LongURL.shorten (/Users/betatable/Desktop/beastmode/opaque-urls-v01/dist/src/index.js:111:13)\n' +
+        '    at async testLongURL (/Users/betatable/Desktop/beastmode/opaque-urls-v01/test-sample.js:47:20)',
+      hint: '',
+      code: ''
+    }
+  }
+}
+❌ Shortening error: Failed to shorten URL: save failed: save failed: TypeError: fetch failed
 
-**That's it.** 
+💡 Use Cases:
+• Share clean URLs: yoursite.com/item/Ab1C2d
+• Track clicks and engagement
+• A/B test different landing pages
+• Manage affiliate links
+• Create branded short domains
+• Analytics and attribution tracking
 
-## The Premature Optimization Trap
-
-This analysis is exactly what kills weekend launches:
-- **"What if we get to 100 million URLs?"** 
-- **"What about enterprise scale?"**
-- **"We need distributed ID generation!"**
-
-**Your users' actual problems:**
-- "Does npm install work?"
-- "Can I shorten a URL in 3 lines of code?"  
-- "Does it handle basic errors gracefully?"
-
-## Ship the Simple Version
-
-**Current collision handling is fine if:**
-- Database has unique constraint on `url_id`
-- You retry once on collision
-- You throw clear error after retry fails
-
-**Save the enterprise analysis for when:**
-- You have 1000+ active users
-- Someone actually hits collision issues
-- Companies are paying you money
-
-**Right now:** Ship it, get feedback, iterate based on real usage patterns.
-
-The collision analysis is great technical thinking, but it's solving tomorrow's problems instead of today's user adoption challenge.
+🎯 Perfect for:
+• E-commerce product sharing
+• Social media campaigns
+• Email marketing
+• QR codes
+• Mobile apps
+• Any entity-based URL management
+betatable@Mac opaque-urls-v01 % 

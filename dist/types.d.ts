@@ -45,6 +45,8 @@ export interface LongURLConfig {
     entities?: Record<string, EntityConfig>;
     /** Base domain for shortened URLs */
     baseUrl?: string;
+    /** Include entity type in URL path (default: false for shortest URLs) */
+    includeEntityInPath?: boolean;
     /** Supabase configuration (default database) */
     supabase?: {
         url?: string;

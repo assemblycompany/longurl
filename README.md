@@ -38,7 +38,8 @@ const result = await longurl.shorten(
   { campaign: 'launch', source: 'email' } // metadata
 );
 
-console.log(result.shortUrl); // https://yourdomain.co/X7gT5p
+console.log(result.shortUrl); // https://yourdomain.co/X7gT5p (shortest by default)
+console.log(result.urlId);    // X7gT5p
 ```
 
 ### Direct Configuration
@@ -78,12 +79,42 @@ const adapter = new SupabaseAdapter({
 const longurl = new LongURL({
   adapter,
   baseUrl: 'https://yourdomain.co',
+  includeEntityInPath: false, // Default: shortest URLs
   entities: {
     product: { tableName: 'products', primaryKey: 'id' },
     user: { tableName: 'users', primaryKey: 'user_id' }
   }
 });
 ```
+
+### URL Structure Options
+
+```typescript
+// Option 1: Minimal URLs (default)
+const longurl = new LongURL({
+  includeEntityInPath: false // or omit entirely (default)
+});
+// Result: https://yourdomain.co/X7gT5p
+
+// Option 2: Entity-prefixed URLs
+const longurl = new LongURL({
+  includeEntityInPath: true
+});
+// Result: https://yourdomain.co/product/X7gT5p
+
+// Option 3: Environment variable override
+// Set LONGURL_INCLUDE_ENTITY_IN_PATH=true
+const longurl = new LongURL(); // Uses env var
+```
+
+**Key Differences:**
+
+- **Option 2**: Configuration hardcoded in application code - fixed at compile/deploy time
+- **Option 3**: Configuration via environment variable - can be changed per environment (dev/staging/prod) without code changes
+
+Both achieve the same result (`yourdomain.co/product/X7gT5p`), but Option 3 provides operational flexibility to switch URL structures via deployment configuration rather than code modification.
+
+- **Entity-prefixed URLs**: SEO-focused sites, organized link management, branded experiences
 
 ## Why LongURL?
 
@@ -109,6 +140,11 @@ const longurl = new LongURL({
 - **Batch operations** for high-throughput scenarios
 - **Health checks** and monitoring support
 - **Real-time subscriptions** (Supabase)
+
+### 🔗 **Flexible URL Structures**
+- **Minimal URLs** (`yourdomain.co/X7gT5p`) - Default behavior
+- **Entity-prefixed URLs** (`yourdomain.co/product/X7gT5p`) - Optional alternative
+- **Environment-configurable** - Switch modes without code changes
 
 ## Configuration Options
 
@@ -407,7 +443,7 @@ const result = await longurl.shorten(
   { campaign: 'launch', source: 'email' } // metadata
 );
 
-console.log(result.shortUrl); // https://yourdomain.co/X7gT5p
+console.log(result.shortUrl); // https://yourdomain.co/X7gT5p (shortest by default)
 console.log(result.urlId);    // X7gT5p
 
 // Resolve URLs (with automatic click tracking)

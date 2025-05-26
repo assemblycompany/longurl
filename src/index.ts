@@ -19,14 +19,22 @@ import {
   DatabaseConfig,
   StorageStrategy 
 } from '../types';
+import { buildEntityUrl } from '../utils';
 
 export class LongURL {
   private config: LongURLConfig;
   private adapter: StorageAdapter;
 
   constructor(config: LongURLConfig = {}) {
-    this.config = config;
+    // Handle includeEntityInPath with environment variable fallback
+    const includeEntityInPath = config.includeEntityInPath ?? 
+      (process.env.LONGURL_INCLUDE_ENTITY_IN_PATH === 'true');
     
+    this.config = {
+      ...config,
+      includeEntityInPath
+    };
+
     // Progressive disclosure: Zero config -> Simple config -> Advanced config
     if (config.adapter) {
       // Level 3: Advanced - Custom adapter injection
@@ -145,7 +153,9 @@ export class LongURL {
 
       // Build short URL
       const baseUrl = this.config.baseUrl || 'https://longurl.co';
-      const shortUrl = `${baseUrl}/${result.urlId}`;
+      const shortUrl = this.config.includeEntityInPath 
+        ? buildEntityUrl(baseUrl, entityType, result.urlId)
+        : `${baseUrl}/${result.urlId}`;
 
       return {
         success: true,

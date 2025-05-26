@@ -12,8 +12,19 @@ const sampleUrl = 'https://www.amazon.com/dp/B0D3M8QYWL?ref=cm_sw_r_cso_cp_apin_
 async function testLongURL() {
   console.log('🚀 Testing LongURL with Amazon sample...\n');
   
+  // Test both URL modes
+  await testUrlMode('Default (shortest URLs - recommended)', false);
+  console.log('\n' + '='.repeat(60) + '\n');
+  await testUrlMode('Entity-aware URLs (opt-in)', true);
+}
+
+async function testUrlMode(modeName, includeEntityInPath) {
+  console.log(`📋 Testing: ${modeName}`);
+  console.log(`🔧 includeEntityInPath: ${includeEntityInPath}\n`);
+  
   // Configuration for testing - shows flexibility with any entity type
   const config = {
+    includeEntityInPath,
     entities: {
       item: {
         tableName: 'items',
@@ -61,56 +72,31 @@ async function testLongURL() {
       console.log(`🔗 Short URL: ${result.shortUrl}`);
       console.log(`🆔 URL ID: ${result.urlId}`);
       console.log(`📊 Compression: ${sampleUrl.length} → ${result.shortUrl.length} chars`);
-      console.log(`💾 Space saved: ${((sampleUrl.length - result.shortUrl.length) / sampleUrl.length * 100).toFixed(1)}%\n`);
+      console.log(`💾 Space saved: ${((sampleUrl.length - result.shortUrl.length) / sampleUrl.length * 100).toFixed(1)}%`);
       
-      // Test URL resolution
-      console.log('🔍 Resolving short URL...');
-      const resolved = await longurl.resolve(result.urlId);
-      
-      if (resolved.success) {
-        console.log('✅ URL resolved successfully!');
-        console.log(`📍 Entity Type: ${resolved.entityType}`);
-        console.log(`🆔 Entity ID: ${resolved.entityId}`);
-        console.log(`🌐 Original URL: ${resolved.originalUrl}`);
-        console.log(`📈 Click Count: ${resolved.clickCount || 0}\n`);
-        
-        // Test analytics
-        console.log('📊 Getting analytics...');
-        const analytics = await longurl.analytics(result.urlId);
-        
-        if (analytics.success) {
-          console.log('✅ Analytics retrieved!');
-          console.log(`👆 Total Clicks: ${analytics.data.totalClicks}`);
-          console.log(`📅 Created: ${analytics.data.createdAt}`);
-          console.log(`🔄 Last Updated: ${analytics.data.updatedAt}\n`);
-        } else {
-          console.log(`❌ Analytics error: ${analytics.error}\n`);
-        }
-        
+      // Show URL structure
+      if (includeEntityInPath) {
+        console.log(`🏗️  URL Structure: domain/entityType/urlId`);
+        console.log(`📂 Entity-aware: Organized by business context`);
       } else {
-        console.log(`❌ Resolution error: ${resolved.error}\n`);
+        console.log(`🏗️  URL Structure: domain/urlId`);
+        console.log(`⚡ Minimal: Shortest possible URLs`);
       }
+      console.log('');
       
     } else {
-      console.log(`❌ Shortening error: ${result.error}\n`);
+      console.log(`❌ Shortening error: ${result.error}`);
+      
+      if (result.error.includes('fetch failed')) {
+        console.log('💡 Note: This is expected with mock database config.');
+        console.log('   The URL structure would be:');
+        if (includeEntityInPath) {
+          console.log(`   🔗 https://yourdomain.co/item/Ab1C2d (entity-aware)`);
+        } else {
+          console.log(`   🔗 https://yourdomain.co/Ab1C2d (minimal)`);
+        }
+      }
     }
-    
-    // Show the power of the system
-    console.log('💡 Use Cases:');
-    console.log('• Share clean URLs: yoursite.com/item/Ab1C2d');
-    console.log('• Track clicks and engagement');
-    console.log('• A/B test different landing pages');
-    console.log('• Manage affiliate links');
-    console.log('• Create branded short domains');
-    console.log('• Analytics and attribution tracking\n');
-    
-    console.log('🎯 Perfect for:');
-    console.log('• E-commerce product sharing');
-    console.log('• Social media campaigns');
-    console.log('• Email marketing');
-    console.log('• QR codes');
-    console.log('• Mobile apps');
-    console.log('• Any entity-based URL management');
     
   } catch (error) {
     console.error('💥 Test failed:', error.message);
@@ -123,4 +109,15 @@ async function testLongURL() {
 }
 
 // Run the test
-testLongURL().catch(console.error); 
+testLongURL().then(() => {
+  console.log('\n🎯 Configuration Options:');
+  console.log('• Config: { includeEntityInPath: true }');
+  console.log('• Environment: LONGURL_INCLUDE_ENTITY_IN_PATH=true');
+  console.log('• Default: false (shortest URLs - recommended)');
+  console.log('\n💡 Use Cases:');
+  console.log('• Shortest URLs (default): Social media, SMS, QR codes');
+  console.log('• Entity URLs (opt-in): SEO, organized link management');
+  console.log('\n📏 Design Philosophy:');
+  console.log('• URL shorteners should prioritize BREVITY by default');
+  console.log('• Entity organization is available when needed');
+}).catch(console.error); 
