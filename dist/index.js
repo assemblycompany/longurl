@@ -2,6 +2,8 @@
 /**
  * LongURL - Programmable URL Shortener
  *
+ * Infrastructure-as-code for URLs. Built for developers who need control.
+ *
  * Main entry point for the longurl package.
  * Exports the LongURL class with built-in Supabase support.
  */
