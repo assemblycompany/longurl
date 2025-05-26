@@ -100,3 +100,6 @@ temp/
 # Turbo
 .turbo/ 
 package-lock\.json
+
+# Development documentation (temporary)
+devdocs/
