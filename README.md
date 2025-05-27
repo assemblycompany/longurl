@@ -7,7 +7,7 @@ Entity-driven URL shortening with intelligent caching, detailed error handling, 
 ## Installation
 
 ```bash
-npm install longurl
+npm install longurl-js
 ```
 
 ## Quick Start
@@ -25,7 +25,7 @@ import 'dotenv/config'; // Node.js
 // or use your framework's env loading (Next.js, Vite, etc.)
 
 // 3. Use LongURL with zero config
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 
 const longurl = new LongURL(); // Automatically uses env vars
 await longurl.initialize();
@@ -45,7 +45,7 @@ console.log(result.urlId);    // X7gT5p
 ### Direct Configuration
 
 ```typescript
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 
 // No environment variables needed
 const longurl = new LongURL({
@@ -189,7 +189,7 @@ $$ LANGUAGE plpgsql;
 ### Basic Operations
 
 ```typescript
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 
 const longurl = new LongURL(); // Uses environment variables
 await longurl.initialize();
@@ -315,12 +315,12 @@ LongURL requires environment variables for Supabase connection. **The library do
 ```typescript
 // Option 1: Using dotenv (recommended)
 import 'dotenv/config'; // Load before importing LongURL
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 
 // Option 2: Manual loading
 import dotenv from 'dotenv';
 dotenv.config();
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 ```
 
 ### Next.js Applications
@@ -336,7 +336,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 **API Routes (App Router)**:
 ```typescript
 // app/api/shorten/route.ts
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 
 const longurl = new LongURL(); // Uses Next.js env vars
 
@@ -353,7 +353,7 @@ export async function POST(request: Request) {
 ```typescript
 // pages/api/shorten.ts
 import { NextApiRequest, NextApiResponse } from 'next';
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 
 const longurl = new LongURL();
 
@@ -369,7 +369,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 **Server Components**:
 ```typescript
 // app/dashboard/page.tsx
-import { LongURL } from 'longurl';
+import { LongURL } from 'longurl-js';
 
 const longurl = new LongURL();
 
