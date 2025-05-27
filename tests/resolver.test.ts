@@ -203,10 +203,10 @@ describe('URL Resolver', () => {
       // Change the mock data - but this shouldn't affect the second call
       // because it should use the cached value
       const differentMockData = {
-        id: 'different-id',
+          id: 'different-id',
         product_id: 'different-product',
         name: 'Different Product',
-        url_id: 'Ef3G4h'
+          url_id: 'Ef3G4h'
       };
       
       mockSingle.mockResolvedValue({ data: differentMockData, error: null });

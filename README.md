@@ -2,7 +2,7 @@
 
 > **Infrastructure-as-code for URLs. Built for developers who need control.**
 
-Entity-driven URL shortening with production-ready error handling, intelligent caching, and flexible storage adapters.
+Entity-driven URL shortening with intelligent caching, detailed error handling, and flexible storage adapters.
 
 ## Installation
 
@@ -61,32 +61,6 @@ const longurl = new LongURL({
 });
 ```
 
-### Advanced Configuration
-
-```typescript
-import { LongURL, SupabaseAdapter } from 'longurl';
-
-// Custom adapter with full control
-const adapter = new SupabaseAdapter({
-  url: process.env.SUPABASE_URL!,
-  key: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  options: {
-    cache: { enabled: true, ttlMs: 300000 },
-    schema: 'public'
-  }
-});
-
-const longurl = new LongURL({
-  adapter,
-  baseUrl: 'https://yourdomain.co',
-  includeEntityInPath: false, // Default: shortest URLs
-  entities: {
-    product: { tableName: 'products', primaryKey: 'id' },
-    user: { tableName: 'users', primaryKey: 'user_id' }
-  }
-});
-```
-
 ### URL Structure Options
 
 ```typescript
@@ -107,21 +81,12 @@ const longurl = new LongURL({
 const longurl = new LongURL(); // Uses env var
 ```
 
-**Key Differences:**
-
-- **Option 2**: Configuration hardcoded in application code - fixed at compile/deploy time
-- **Option 3**: Configuration via environment variable - can be changed per environment (dev/staging/prod) without code changes
-
-Both achieve the same result (`yourdomain.co/product/X7gT5p`), but Option 3 provides operational flexibility to switch URL structures via deployment configuration rather than code modification.
-
-- **Entity-prefixed URLs**: SEO-focused sites, organized link management, branded experiences
-
 ## Why LongURL?
 
 ### 🔧 **Developer-First Architecture**
 - **TypeScript-native** with full type safety
 - **Adapter pattern** for different storage backends
-- **Production-ready error handling** with actionable messages
+- **Detailed error handling** with actionable messages
 - **No retry logic** - integrates with your existing infrastructure
 
 ### 🏗️ **Entity-Driven Design**
@@ -129,16 +94,10 @@ Both achieve the same result (`yourdomain.co/product/X7gT5p`), but Option 3 prov
 - **Rich metadata support** for analytics and context
 - **Flexible schema** - use your existing table structure
 
-### 🔒 **Production-Ready**
-- **Intelligent caching** with configurable TTL and size limits
-- **Detailed error messages** with SQL hints and documentation links
-- **Schema flexibility** - no forced table structure
-- **Self-hosted** - your data, your control
-
 ### ⚡ **Performance & Reliability**
-- **Built-in collision detection** with Base62 encoding
+- **Built-in collision detection** with Base62 encoding (56.8 billion URL combinations)
+- **Intelligent caching** with configurable TTL and size limits
 - **Batch operations** for high-throughput scenarios
-- **Health checks** and monitoring support
 - **Real-time subscriptions** (Supabase)
 
 ### 🔗 **Flexible URL Structures**
@@ -146,69 +105,37 @@ Both achieve the same result (`yourdomain.co/product/X7gT5p`), but Option 3 prov
 - **Entity-prefixed URLs** (`yourdomain.co/product/X7gT5p`) - Optional alternative
 - **Environment-configurable** - Switch modes without code changes
 
-## Configuration Options
+## Architecture Decision: Why Entity-Driven?
 
-### Adapter Configuration
-
-```typescript
-// Supabase Adapter with full options
-const adapter = new SupabaseAdapter({
-  url: 'https://your-project.supabase.co',
-  key: 'your-service-role-key',
-  options: {
-    schema: 'public',                    // Database schema
-    headers: { 'x-custom': 'header' },   // Custom headers
-    cache: {
-      enabled: true,                     // Enable caching
-      ttlMs: 300000,                     // 5 minutes
-      maxSize: 1000                      // Max cached items
-    },
-    realTime: {
-      enabled: true,                     // Enable real-time subscriptions
-      params: { /* subscription params */ }
-    }
-  }
-});
-```
-
-### Entity Configuration
+Traditional URL shorteners treat URLs as isolated strings. LongURL treats them as **business objects** with context:
 
 ```typescript
-const longurl = new LongURL({
-  adapter,
-  baseUrl: 'https://yourdomain.co',
-  entities: {
-    'blog-post': { 
-      tableName: 'posts', 
-      primaryKey: 'post_id'
-    },
-    'product': { 
-      tableName: 'products', 
-      primaryKey: 'id' 
-    },
-    'campaign': { 
-      tableName: 'marketing_campaigns', 
-      primaryKey: 'campaign_id' 
-    }
-  }
-});
+// Traditional approach: URLs in isolation
+shortener.create('https://shop.com/product/123') // → abc123
+
+// LongURL approach: URLs with business context
+longurl.shorten('product', 'laptop-pro-2024', 'https://shop.com/product/123', {
+  category: 'electronics',
+  campaign: 'black-friday'
+}) // → X7gT5p with full context
 ```
 
-### Legacy Database Configuration (backward compatibility)
+**Benefits:**
+- **Analytics by entity** - Track performance per product, user, campaign
+- **Organized management** - Find all URLs for a specific business object
+- **Rich metadata** - Store campaign data, A/B test variants, user context
+- **Business intelligence** - Connect URL performance to business metrics
 
-```typescript
-const longurl = new LongURL({
-  database: {
-    strategy: 'LOOKUP_TABLE',
-    connection: {
-      url: process.env.SUPABASE_URL!,
-      key: process.env.SUPABASE_SERVICE_ROLE_KEY!
-    },
-    lookupTable: 'short_urls'
-  },
-  baseUrl: 'https://yourdomain.co'
-});
-```
+## When NOT to Use LongURL
+
+LongURL is designed for **business applications** that need organized URL management. Consider alternatives if you need:
+
+- **Simple URL shortening** without business context (use bit.ly, tinyurl)
+- **Anonymous/public shortening** without user accounts (use traditional shorteners)
+- **Extreme scale** (billions of URLs) without entity organization (build custom solution)
+- **Zero infrastructure** requirements (use hosted services)
+
+LongURL shines when you need **programmatic control** and **business context** for your URLs.
 
 ## Database Setup
 
@@ -257,6 +184,63 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
+## Core Usage
+
+### Basic Operations
+
+```typescript
+import { LongURL } from 'longurl';
+
+const longurl = new LongURL(); // Uses environment variables
+await longurl.initialize();
+
+// Shorten URLs with entity context
+const result = await longurl.shorten(
+  'product',                    // entity type
+  'prod-123',                   // entity ID
+  'https://very-long-url.com/path',
+  { campaign: 'launch', source: 'email' } // metadata
+);
+
+// Resolve URLs (with automatic click tracking)
+const resolved = await longurl.resolve('X7gT5p');
+console.log(resolved.originalUrl);  // https://very-long-url.com/path
+console.log(resolved.entityType);   // product
+console.log(resolved.entityId);     // prod-123
+console.log(resolved.metadata);     // { campaign: 'launch', source: 'email' }
+
+// Get detailed analytics
+const analytics = await longurl.analytics('X7gT5p');
+console.log(analytics.data.totalClicks);    // 42
+console.log(analytics.data.lastClickAt);    // 2024-01-15T10:30:00Z
+console.log(analytics.data.clickHistory);   // Array of click events
+```
+
+### Advanced Features
+
+```typescript
+// Batch operations
+const urls = [
+  { urlId: 'abc123', entityType: 'product', entityId: 'prod-1', originalUrl: 'https://...' },
+  { urlId: 'def456', entityType: 'product', entityId: 'prod-2', originalUrl: 'https://...' }
+];
+
+await adapter.saveBatch(urls);
+
+// Real-time subscriptions (Supabase only)
+const subscription = adapter.subscribeToChanges((payload) => {
+  console.log('URL event:', payload);
+});
+
+// Cache statistics
+const stats = adapter.getCacheStats();
+console.log(stats); // { size: 150, maxSize: 1000, enabled: true }
+
+// Health checks
+const isHealthy = await longurl.healthCheck();
+console.log(isHealthy); // true/false
+```
+
 ## Error Handling
 
 LongURL provides detailed, actionable error messages:
@@ -273,45 +257,6 @@ try {
     console.log(error.docsUrl);     // Link to Supabase docs
   }
 }
-```
-
-## Advanced Usage
-
-### Batch Operations
-
-```typescript
-const urls = [
-  { urlId: 'abc123', entityType: 'product', entityId: 'prod-1', originalUrl: 'https://...' },
-  { urlId: 'def456', entityType: 'product', entityId: 'prod-2', originalUrl: 'https://...' }
-];
-
-await adapter.saveBatch(urls);
-```
-
-### Real-time Subscriptions
-
-```typescript
-// Subscribe to URL changes (Supabase only)
-const subscription = adapter.subscribeToChanges((payload) => {
-  console.log('URL event:', payload);
-});
-
-// Cleanup
-subscription.unsubscribe();
-```
-
-### Cache Statistics
-
-```typescript
-const stats = adapter.getCacheStats();
-console.log(stats); // { size: 150, maxSize: 1000, enabled: true }
-```
-
-### Health Checks
-
-```typescript
-const isHealthy = await longurl.healthCheck();
-console.log(isHealthy); // true/false
 ```
 
 ## Use Cases
@@ -391,87 +336,7 @@ import { LongURL } from 'longurl';
 const longurl = new LongURL(); // Uses Next.js env vars
 ```
 
-### Vite Applications
-
-```typescript
-// .env file (automatically loaded by Vite)
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-// Use with VITE_ prefix
-const longurl = new LongURL({
-  supabase: {
-    url: import.meta.env.VITE_SUPABASE_URL,
-    key: import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
-  }
-});
-```
-
-### Production Deployments
-
-```bash
-# Vercel
-vercel env add SUPABASE_URL
-vercel env add SUPABASE_SERVICE_ROLE_KEY
-
-# Netlify
-netlify env:set SUPABASE_URL "https://your-project.supabase.co"
-netlify env:set SUPABASE_SERVICE_ROLE_KEY "your-key"
-
-# Docker
-docker run -e SUPABASE_URL="..." -e SUPABASE_SERVICE_ROLE_KEY="..." your-app
-
-# Railway/Render
-# Set in dashboard environment variables section
-```
-
 ## API Reference
-
-### Basic Usage
-
-```typescript
-import { LongURL } from 'longurl';
-
-const longurl = new LongURL(); // Uses environment variables
-await longurl.initialize();
-
-// Shorten URLs with entity context
-const result = await longurl.shorten(
-  'product',                    // entity type
-  'prod-123',                   // entity ID
-  'https://very-long-url.com/path',
-  { campaign: 'launch', source: 'email' } // metadata
-);
-
-console.log(result.shortUrl); // https://yourdomain.co/X7gT5p (shortest by default)
-console.log(result.urlId);    // X7gT5p
-
-// Resolve URLs (with automatic click tracking)
-const resolved = await longurl.resolve('X7gT5p');
-console.log(resolved.originalUrl);  // https://very-long-url.com/path
-console.log(resolved.entityType);   // product
-console.log(resolved.entityId);     // prod-123
-console.log(resolved.metadata);     // { campaign: 'launch', source: 'email' }
-
-// Get detailed analytics
-const analytics = await longurl.analytics('X7gT5p');
-console.log(analytics.data.totalClicks);    // 42
-console.log(analytics.data.lastClickAt);    // 2024-01-15T10:30:00Z
-console.log(analytics.data.clickHistory);   // Array of click events
-```
-
-### Entity-Centric Organization
-
-```typescript
-// Organize URLs by business entities
-await longurl.shorten('user', 'user-456', 'https://profile.com', { source: 'share' });
-await longurl.shorten('campaign', 'summer-2024', 'https://landing.com', { variant: 'A' });
-await longurl.shorten('product', 'widget-789', 'https://checkout.com', { discount: '20OFF' });
-
-// Query by entity
-const userUrls = await longurl.getUrlsByEntity('user', 'user-456');
-const campaignUrls = await longurl.getUrlsByEntity('campaign', 'summer-2024');
-```
 
 ### Core Methods
 
@@ -480,98 +345,14 @@ const campaignUrls = await longurl.getUrlsByEntity('campaign', 'summer-2024');
 - `longurl.shorten(entityType, entityId, url, metadata?)` - Shorten URL with entity context
 - `longurl.resolve(urlId)` - Resolve URL and track click
 - `longurl.analytics(urlId)` - Get detailed analytics for a URL
-- `longurl.getUrlsByEntity(entityType, entityId)` - Get all URLs for an entity
 - `longurl.healthCheck()` - Check adapter health
 - `longurl.close()` - Close adapter connections
 
-### Error Handling
+### Adapter Methods (Advanced)
 
-```typescript
-import { LongURL, SupabaseAdapterError } from 'longurl';
-
-try {
-  const result = await longurl.shorten('product', 'prod-123', 'https://example.com');
-} catch (error) {
-  if (error instanceof SupabaseAdapterError) {
-    console.error('Database error:', error.message);
-    console.error('SQL hint:', error.sqlHint);
-    console.error('Context:', error.context);
-  }
-}
-```
-
-## Deployment
-
-### Vercel/Netlify Functions
-
-```typescript
-// api/shorten.ts
-import 'dotenv/config'; // Only needed for local development
-import { LongURL } from 'longurl';
-
-const longurl = new LongURL(); // Uses environment variables
-
-export default async function handler(req, res) {
-  try {
-    await longurl.initialize();
-    const { entityType, entityId, url, metadata } = req.body;
-    const result = await longurl.shorten(entityType, entityId, url, metadata);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
-```
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3000
-CMD ["node", "dist/index.js"]
-```
-
-### Express.js Server
-
-```typescript
-import express from 'express';
-import { LongURL } from 'longurl';
-
-const app = express();
-const longurl = new LongURL();
-
-app.use(express.json());
-
-// Initialize once at startup
-longurl.initialize().then(() => {
-  console.log('LongURL initialized');
-});
-
-app.post('/api/shorten', async (req, res) => {
-  try {
-    const { entityType, entityId, url, metadata } = req.body;
-    const result = await longurl.shorten(entityType, entityId, url, metadata);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/:urlId', async (req, res) => {
-  try {
-    const resolved = await longurl.resolve(req.params.urlId);
-    res.redirect(resolved.originalUrl);
-  } catch (error) {
-    res.status(404).send('URL not found');
-  }
-});
-
-app.listen(3000);
-```
+- `adapter.saveBatch(data[])` - Batch save operations
+- `adapter.subscribeToChanges(callback)` - Real-time subscriptions (Supabase)
+- `adapter.getCacheStats()` - Cache performance metrics
 
 ## Contributing
 
@@ -583,4 +364,4 @@ We're building developer-first URL infrastructure. Contributions welcome!
 
 ## License
 
-MIT - Use it however you want.
+MIT - Use it however you want. 

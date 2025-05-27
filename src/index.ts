@@ -34,7 +34,7 @@ export class LongURL {
       ...config,
       includeEntityInPath
     };
-
+    
     // Progressive disclosure: Zero config -> Simple config -> Advanced config
     if (config.adapter) {
       // Level 3: Advanced - Custom adapter injection
