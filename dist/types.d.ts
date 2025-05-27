@@ -45,7 +45,16 @@ export interface LongURLConfig {
     entities?: Record<string, EntityConfig>;
     /** Base domain for shortened URLs */
     baseUrl?: string;
-    /** Include entity type in URL path (default: false for shortest URLs) */
+    /**
+     * Include entity type in URL path (default: false for shortest URLs)
+     *
+     * Design Philosophy: URL shorteners should prioritize brevity by default.
+     * - false (default): https://yourdomain.co/X7gT5p (shortest)
+     * - true (opt-in):   https://yourdomain.co/product/X7gT5p (organized)
+     *
+     * Use shortest URLs for: social media, SMS, QR codes, character limits
+     * Use entity URLs for: SEO, organized link management, branded experiences
+     */
     includeEntityInPath?: boolean;
     /** Supabase configuration (default database) */
     supabase?: {

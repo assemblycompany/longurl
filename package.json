@@ -17,7 +17,7 @@
   "homepage": "https://longurl.co",
   "repository": {
     "type": "git",
-    "url": "https://github.com/assemblycompany/longurl.git"
+    "url": "git+https://github.com/assemblycompany/longurl.git"
   },
   "bugs": {
     "url": "https://github.com/assemblycompany/longurl/issues"
@@ -25,7 +25,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "longurl": "./dist/src/cli.js"
+    "longurl": "dist/src/cli.js"
   },
   "scripts": {
     "build": "tsc",

@@ -325,15 +325,64 @@ import { LongURL } from 'longurl';
 
 ### Next.js Applications
 
+Next.js works seamlessly with LongURL's zero-config approach:
+
 ```typescript
 // .env.local file (automatically loaded by Next.js)
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-// pages/api/shorten.ts or app/api/shorten/route.ts
+**API Routes (App Router)**:
+```typescript
+// app/api/shorten/route.ts
 import { LongURL } from 'longurl';
 
 const longurl = new LongURL(); // Uses Next.js env vars
+
+export async function POST(request: Request) {
+  const { entityType, entityId, url, metadata } = await request.json();
+  
+  const result = await longurl.shorten(entityType, entityId, url, metadata);
+  
+  return Response.json(result);
+}
+```
+
+**API Routes (Pages Router)**:
+```typescript
+// pages/api/shorten.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { LongURL } from 'longurl';
+
+const longurl = new LongURL();
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { entityType, entityId, url, metadata } = req.body;
+  
+  const result = await longurl.shorten(entityType, entityId, url, metadata);
+  
+  res.json(result);
+}
+```
+
+**Server Components**:
+```typescript
+// app/dashboard/page.tsx
+import { LongURL } from 'longurl';
+
+const longurl = new LongURL();
+
+export default async function Dashboard() {
+  const analytics = await longurl.analytics('X7gT5p');
+  
+  return (
+    <div>
+      <h1>URL Analytics</h1>
+      <p>Total clicks: {analytics.data?.totalClicks}</p>
+    </div>
+  );
+}
 ```
 
 ## API Reference
