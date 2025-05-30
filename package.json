@@ -35,7 +35,8 @@
     "test": "jest",
     "prepublishOnly": "npm run build",
     "push": "pushscript",
-    "commit": "pushscript commit"
+    "commit": "pushscript commit",
+    "pushscript": "pushscript"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",

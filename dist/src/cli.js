@@ -64,15 +64,6 @@ const loadEnv = () => {
     }
 };
 loadEnv();
-// Get Supabase client from environment
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-if (!supabaseUrl || !supabaseKey) {
-    console.error('Error: Supabase URL or key not configured');
-    console.error('Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables');
-    process.exit(1);
-}
-const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseKey);
 /**
  * Process entities of a specific type and generate URL IDs for them.
  *
@@ -86,6 +77,8 @@ const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseKey);
 async function processEntityType(entityType, tableName, primaryKey, dbConfig, limit = 100, dryRun = false) {
     console.log(`\nProcessing ${entityType} entities...`);
     const urlIdColumn = dbConfig.urlIdColumn || 'url_id';
+    // Get Supabase client from config
+    const supabase = (0, supabase_js_1.createClient)(dbConfig.connection.url, dbConfig.connection.key);
     // Fetch entities without URL IDs
     console.log(`Fetching ${entityType} entities without URL IDs (limit: ${limit})...`);
     let query = supabase
@@ -177,17 +170,33 @@ async function processEntityType(entityType, tableName, primaryKey, dbConfig, li
  */
 async function main() {
     const args = process.argv.slice(2);
-    if (args.length === 0) {
+    if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
         console.log('Usage: longurl-cli <command> [options]');
         console.log('');
         console.log('Commands:');
         console.log('  generate <entity-type> <table-name> <primary-key> [limit] [--dry-run]');
         console.log('    Generate URL IDs for entities in a specific table');
+        console.log('  test <entity-type> <entity-id> [domain]');
+        console.log('    Test URL generation for a single entity (no database required)');
         console.log('');
         console.log('Examples:');
         console.log('  longurl-cli generate product products id 50');
         console.log('  longurl-cli generate customer customers customer_id 100 --dry-run');
+        console.log('  longurl-cli test product laptop-123');
+        console.log('  longurl-cli test user user-456 mysite.com');
+        console.log('');
+        console.log('Environment Variables:');
+        console.log('  SUPABASE_URL              Supabase project URL');
+        console.log('  SUPABASE_SERVICE_ROLE_KEY Service role key for database access');
         return;
+    }
+    // Get Supabase client from environment
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+        console.error('Error: Supabase URL or key not configured');
+        console.error('Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables');
+        process.exit(1);
     }
     const command = args[0];
     const dryRun = args.includes('--dry-run');
@@ -224,6 +233,35 @@ async function main() {
         console.log(`Failed: ${result.failed}`);
         if (result.failed > 0) {
             process.exit(1);
+        }
+    }
+    else if (command === 'test') {
+        const entityType = args[1];
+        const entityId = args[2];
+        const domain = args[3] || 'yourdomain.co';
+        if (!entityType || !entityId) {
+            console.error('Error: entity-type and entity-id are required');
+            console.error('Usage: longurl-cli test <entity-type> <entity-id> [domain]');
+            process.exit(1);
+        }
+        console.log(`🧪 Testing URL generation (no database required)`);
+        console.log(`Entity Type: ${entityType}`);
+        console.log(`Entity ID: ${entityId}`);
+        console.log(`Domain: ${domain}`);
+        console.log('');
+        // Import generateUrlId here to avoid database requirement at startup
+        const { generateUrlId } = await Promise.resolve().then(() => __importStar(require('./generator')));
+        const result = await generateUrlId(entityType, entityId, { domain }, dbConfig);
+        if (result.success) {
+            console.log('✅ URL generated successfully!');
+            console.log(`🔗 Short URL: ${result.shortUrl}`);
+            console.log(`🆔 URL ID: ${result.urlId}`);
+            console.log('');
+            console.log('💡 This demonstrates the URL structure your app would generate.');
+            console.log('   Add database tables to enable collision detection and persistence.');
+        }
+        else {
+            console.log(`❌ Generation failed: ${result.error}`);
         }
     }
     else {

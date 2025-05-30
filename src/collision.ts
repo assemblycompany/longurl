@@ -63,8 +63,8 @@ export async function checkCollision(
     
     if (error) {
       console.error(`Error checking collision: ${error.message}`);
-      // In case of error, assume no collision to allow retry
-      return false;
+      // Throw error so generator can handle graceful degradation
+      throw new Error(`Database table "${table}" not configured: ${error.message}`);
     }
     
     const exists = Array.isArray(data) && data.length > 0;
@@ -77,8 +77,8 @@ export async function checkCollision(
     return exists;
   } catch (error) {
     console.error(`Error in collision check: ${error instanceof Error ? error.message : String(error)}`);
-    // In case of error, assume no collision to allow retry
-    return false;
+    // Throw error so generator can handle graceful degradation
+    throw new Error(`Database connection failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

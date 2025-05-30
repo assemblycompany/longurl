@@ -99,9 +99,11 @@ describe('URL Generator', () => {
         'product-123'
       );
       
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Error generating URL');
-      expect(result.urlId).toBe('');
+      // With graceful degradation, this should now succeed
+      expect(result.success).toBe(true);
+      expect(result.urlId).toBeDefined();
+      expect(result.urlId!.length).toBe(6);
+      expect(result.shortUrl).toBeDefined();
     });
   });
   

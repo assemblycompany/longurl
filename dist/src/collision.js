@@ -48,8 +48,8 @@ async function checkCollision(entityType, urlId, dbConfig) {
         const { data, error } = await query.limit(1);
         if (error) {
             console.error(`Error checking collision: ${error.message}`);
-            // In case of error, assume no collision to allow retry
-            return false;
+            // Throw error so generator can handle graceful degradation
+            throw new Error(`Database table "${table}" not configured: ${error.message}`);
         }
         const exists = Array.isArray(data) && data.length > 0;
         // If ID exists, add to cache to speed up future checks
@@ -60,8 +60,8 @@ async function checkCollision(entityType, urlId, dbConfig) {
     }
     catch (error) {
         console.error(`Error in collision check: ${error instanceof Error ? error.message : String(error)}`);
-        // In case of error, assume no collision to allow retry
-        return false;
+        // Throw error so generator can handle graceful degradation
+        throw new Error(`Database connection failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
 /**

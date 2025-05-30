@@ -36,26 +36,40 @@ export async function generateUrlId(
     let urlId = generateBase62Id(idLength);
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
+    let collisionCheckingAvailable = true;
     
     // Check for collisions and regenerate if necessary
-    while (attempts < MAX_ATTEMPTS) {
-      // Check if this ID already exists for this entity type
-      const collisionExists = await checkCollision(entityType, urlId, dbConfig);
-      
-      if (!collisionExists) {
-        // No collision, we can use this ID
+    while (attempts < MAX_ATTEMPTS && collisionCheckingAvailable) {
+      try {
+        // Always attempt database collision checking first
+        const collisionExists = await checkCollision(entityType, urlId, dbConfig);
+        
+        if (!collisionExists) {
+          // No collision, we can use this ID
+          break;
+        }
+        
+        console.log(`Collision detected for ${entityType}/${urlId}, regenerating (attempt ${attempts})...`);
+        
+        // Generate a new ID
+        urlId = generateBase62Id(idLength);
+        attempts++;
+        
+      } catch (error) {
+        // Database issue - degrade gracefully
+        console.log("⚠️  Database not fully configured:");
+        console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+        console.log("💡 To fix: Ensure Supabase tables exist (run setup-tables.sql)");
+        console.log("🎯 Continuing with URL generation (no collision checking)");
+        
+        // Disable collision checking for remaining attempts
+        collisionCheckingAvailable = false;
         break;
       }
-      
-      console.log(`Collision detected for ${entityType}/${urlId}, regenerating (attempt ${attempts})...`);
-      
-      // Generate a new ID
-      urlId = generateBase62Id(idLength);
-      attempts++;
     }
     
-    // If we hit max attempts, return error
-    if (attempts >= MAX_ATTEMPTS) {
+    // If we hit max attempts with collision checking enabled, return error
+    if (attempts >= MAX_ATTEMPTS && collisionCheckingAvailable) {
       return {
         urlId: '',
         shortUrl: '',
@@ -71,7 +85,10 @@ export async function generateUrlId(
     return {
       urlId,
       shortUrl,
-      success: true
+      success: true,
+      entityType,
+      entityId,
+      originalUrl: shortUrl
     };
   } catch (error) {
     return {
