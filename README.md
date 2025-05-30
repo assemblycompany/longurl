@@ -29,7 +29,7 @@ npx longurl-js test campaign black-friday-2024
 🆔 URL ID: X7gT5p
 ```
 
-**Zero environment variables, zero database, zero configuration files** - designed like Tesla's supercharger network for instant testing:
+**Zero environment variables, zero database, zero configuration files** - designed for instant testing:
 
 - 🚀 **Instant evaluation** - understand LongURL in seconds, not hours
 - 🔧 **Test URL structures** with your actual entity types and IDs  
