@@ -413,4 +413,4 @@ We're building developer-first URL infrastructure. Contributions welcome!
 
 ## License
 
-MIT - Use it however you want. 
+MIT - Use it however you want.
