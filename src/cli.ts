@@ -10,40 +10,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { generateUrlId } from './generator';
 import { DatabaseConfig, StorageStrategy } from '../types';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
-import { existsSync } from 'fs';
-
-// Initialize environment
-const loadEnv = () => {
-  // Try different possible locations for .env file
-  const envPaths = [
-    '.env',
-    '.env.local',
-    path.resolve(process.cwd(), '../../.env'),
-    path.resolve(process.cwd(), '../../.env.local')
-  ];
-
-  for (const envPath of envPaths) {
-    if (existsSync(envPath)) {
-      console.log(`Loading environment from ${envPath}`);
-      dotenv.config({ path: envPath });
-      break;
-    }
-  }
-};
-
-loadEnv();
 
 /**
  * Process entities of a specific type and generate URL IDs for them.
- * 
- * @param entityType Type of entity to process
- * @param tableName Database table name
- * @param primaryKey Primary key column name
- * @param dbConfig Database configuration
- * @param limit Max number of entities to process in one batch
- * @param dryRun If true, don't actually update the database
  */
 async function processEntityType(
   entityType: string,
@@ -56,20 +25,15 @@ async function processEntityType(
   console.log(`\nProcessing ${entityType} entities...`);
   
   const urlIdColumn = dbConfig.urlIdColumn || 'url_id';
-  
-  // Get Supabase client from config
   const supabase = createClient(dbConfig.connection.url, dbConfig.connection.key);
   
-  // Fetch entities without URL IDs
   console.log(`Fetching ${entityType} entities without URL IDs (limit: ${limit})...`);
   
-  let query = supabase
+  const { data: entities, error } = await supabase
     .from(tableName)
     .select(`${primaryKey}, ${urlIdColumn}`)
     .is(urlIdColumn, null)
     .limit(limit);
-  
-  const { data: entities, error } = await query;
   
   if (error) {
     console.error(`Error fetching ${entityType} entities:`, error);
@@ -83,7 +47,6 @@ async function processEntityType(
   
   console.log(`Found ${entities.length} ${entityType} entities without URL IDs`);
   
-  // Process each entity
   let success = 0;
   let failed = 0;
   
@@ -99,7 +62,6 @@ async function processEntityType(
     console.log(`Processing ${entityType} with ID: ${entityId}`);
     
     try {
-      // Generate URL ID
       const result = await generateUrlId(entityType, entityId.toString(), {}, dbConfig);
       
       if (!result.success || !result.urlId) {
@@ -111,10 +73,8 @@ async function processEntityType(
       const urlId = result.urlId;
       console.log(`Generated URL ID ${urlId} for ${entityType} ${entityId}`);
       
-      // Update the entity with the URL ID
       if (!dryRun) {
         if (dbConfig.strategy === StorageStrategy.LOOKUP_TABLE) {
-          // Insert into lookup table
           const lookupTable = dbConfig.lookupTable || 'short_urls';
           
           const { error: insertError } = await supabase
@@ -123,7 +83,7 @@ async function processEntityType(
               url_id: urlId,
               entity_id: entityId,
               entity_type: entityType,
-              original_url: `/${entityType}/${entityId}`, // Default URL pattern
+              original_url: `/${entityType}/${entityId}`,
               click_count: 0,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
@@ -135,7 +95,6 @@ async function processEntityType(
             continue;
           }
         } else {
-          // Update entity table directly
           const { error: updateError } = await supabase
             .from(tableName)
             .update({ [urlIdColumn]: urlId })
@@ -164,11 +123,12 @@ async function processEntityType(
 }
 
 /**
- * Main CLI function
+ * Main CLI function with conditional environment loading
  */
 async function main() {
   const args = process.argv.slice(2);
   
+  // ✅ Help works instantly - no environment loading needed
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.log('Usage: longurl-cli <command> [options]');
     console.log('');
@@ -190,31 +150,13 @@ async function main() {
     return;
   }
   
-  // Get Supabase client from environment
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Error: Supabase URL or key not configured');
-    console.error('Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables');
-    process.exit(1);
-  }
-  
   const command = args[0];
   const dryRun = args.includes('--dry-run');
   
-  // Database configuration
-  const dbConfig: DatabaseConfig = {
-    strategy: StorageStrategy.LOOKUP_TABLE,
-    connection: {
-      url: supabaseUrl!,
-      key: supabaseKey!
-    },
-    lookupTable: 'short_urls',
-    urlIdColumn: 'url_id'
-  };
-  
   if (command === 'generate') {
+    // ✅ Only load environment when database is actually needed
+    const { initializeDatabaseEnvironment } = await import('./env');
+    
     const entityType = args[1];
     const tableName = args[2];
     const primaryKey = args[3];
@@ -226,24 +168,33 @@ async function main() {
       process.exit(1);
     }
     
-    console.log(`Starting URL ID generation for ${entityType} entities...`);
-    console.log(`Table: ${tableName}`);
-    console.log(`Primary Key: ${primaryKey}`);
-    console.log(`Limit: ${limit}`);
-    console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
-    console.log('');
-    
-    const result = await processEntityType(entityType, tableName, primaryKey, dbConfig, limit, dryRun);
-    
-    console.log('\n=== SUMMARY ===');
-    console.log(`Total entities processed: ${result.total}`);
-    console.log(`Successfully generated: ${result.success}`);
-    console.log(`Failed: ${result.failed}`);
-    
-    if (result.failed > 0) {
+    try {
+      const dbConfig = initializeDatabaseEnvironment();
+      
+      console.log(`Starting URL ID generation for ${entityType} entities...`);
+      console.log(`Table: ${tableName}`);
+      console.log(`Primary Key: ${primaryKey}`);
+      console.log(`Limit: ${limit}`);
+      console.log(`Dry run: ${dryRun ? 'Yes' : 'No'}`);
+      console.log('');
+      
+      const result = await processEntityType(entityType, tableName, primaryKey, dbConfig, limit, dryRun);
+      
+      console.log('\n=== SUMMARY ===');
+      console.log(`Total entities processed: ${result.total}`);
+      console.log(`Successfully generated: ${result.success}`);
+      console.log(`Failed: ${result.failed}`);
+      
+      if (result.failed > 0) {
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('Error:', (error as Error).message);
       process.exit(1);
     }
+    
   } else if (command === 'test') {
+    // ✅ Test command works with zero environment - no database needed
     const entityType = args[1];
     const entityId = args[2];
     const domain = args[3] || 'yourdomain.co';
@@ -260,10 +211,15 @@ async function main() {
     console.log(`Domain: ${domain}`);
     console.log('');
     
-    // Import generateUrlId here to avoid database requirement at startup
-    const { generateUrlId } = await import('./generator');
+    // Create minimal config for testing (no database operations)
+    const testConfig: DatabaseConfig = {
+      strategy: StorageStrategy.LOOKUP_TABLE,
+      connection: { url: '', key: '' }, // Empty - won't be used for test
+      lookupTable: 'short_urls',
+      urlIdColumn: 'url_id'
+    };
     
-    const result = await generateUrlId(entityType, entityId, { domain }, dbConfig);
+    const result = await generateUrlId(entityType, entityId, { domain }, testConfig);
     
     if (result.success) {
       console.log('✅ URL generated successfully!');
@@ -275,6 +231,7 @@ async function main() {
     } else {
       console.log(`❌ Generation failed: ${result.error}`);
     }
+    
   } else {
     console.error(`Error: Unknown command "${command}"`);
     console.error('Run without arguments to see usage information');
