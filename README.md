@@ -10,6 +10,33 @@ Entity-driven URL shortening with intelligent caching, detailed error handling, 
 npm install longurl-js
 ```
 
+## Zero-Friction Testing
+
+Try LongURL immediately without any setup:
+
+```bash
+# Get help instantly (no configuration required)
+npx longurl-js --help
+
+# Test URL generation with your own data
+npx longurl-js test product laptop-123
+npx longurl-js test user john-doe mysite.com
+npx longurl-js test campaign black-friday-2024
+
+# See exactly what URLs your app would generate
+✅ URL generated successfully!
+🔗 Short URL: https://mysite.com/product/X7gT5p
+🆔 URL ID: X7gT5p
+```
+
+**No database, no environment variables, no configuration files** - just test immediately with your own entity types and IDs. Perfect for:
+- 🚀 **Evaluating the library** before setup
+- 🔧 **Testing URL structures** with your data  
+- 📊 **Demonstrating to stakeholders** 
+- ⚡ **Rapid prototyping**
+
+When ready for production, simply configure Supabase for persistence and collision detection.
+
 ## Quick Start
 
 ### Zero Configuration (Recommended)
@@ -84,10 +111,11 @@ const longurl = new LongURL(); // Uses env var
 ## Why LongURL?
 
 ### 🔧 **Developer-First Architecture**
+- **Zero-friction testing** - try immediately without setup
 - **TypeScript-native** with full type safety
 - **Adapter pattern** for different storage backends
 - **Detailed error handling** with actionable messages
-- **No retry logic** - integrates with your existing infrastructure
+- **Graceful degradation** - works with or without database
 
 ### 🏗️ **Entity-Driven Design**
 - **Organize URLs by business entities** (products, users, campaigns)
