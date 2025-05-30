@@ -45,10 +45,42 @@ When ready for production, simply configure Supabase for persistence and collisi
 
 ### Zero Configuration (Recommended)
 
+**Step 1: Create Supabase Project & Database**
+
+1. Go to [supabase.com](https://supabase.com) and create a free account
+2. Click "New Project" and wait for provisioning (2-3 minutes)
+3. In your dashboard, go to "SQL Editor" and run this schema:
+
+```sql
+CREATE TABLE short_urls (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  url_id TEXT UNIQUE NOT NULL,
+  entity_type TEXT,
+  entity_id TEXT,
+  original_url TEXT NOT NULL,
+  click_count INTEGER DEFAULT 0,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for fast lookups
+CREATE INDEX idx_short_urls_url_id ON short_urls(url_id);
+CREATE INDEX idx_short_urls_entity ON short_urls(entity_type, entity_id);
+```
+
+4. Go to "Settings" → "API" and copy your **Project URL** and **service_role** key
+
+**Step 2: Configure Environment & Use**
+
+```bash
+npm install longurl-js dotenv
+```
+
 ```typescript
 // 1. Set environment variables
 // .env file:
-SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 // 2. Load environment variables (user's responsibility)
@@ -72,6 +104,8 @@ const result = await longurl.shorten(
 console.log(result.shortUrl); // https://yourdomain.co/X7gT5p (shortest by default)
 console.log(result.urlId);    // X7gT5p
 ```
+
+Check your Supabase dashboard → "Table Editor" → `short_urls` to see your data!
 
 ### Direct Configuration
 
