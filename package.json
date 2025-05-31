@@ -1,6 +1,6 @@
 {
   "name": "longurl-js",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "LongURL - Programmable URL shortener with entity-driven design and production-ready infrastructure",
   "keywords": [
     "longurl",
