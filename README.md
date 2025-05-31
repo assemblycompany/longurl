@@ -192,17 +192,6 @@ longurl.shorten('product', 'laptop-pro-2024', 'https://shop.com/product/123', {
 - **Rich metadata** - Store campaign data, A/B test variants, user context
 - **Business intelligence** - Connect URL performance to business metrics
 
-## When NOT to Use LongURL
-
-LongURL is designed for **business applications** that need organized URL management. Consider alternatives if you need:
-
-- **Simple URL shortening** without business context (use bit.ly, tinyurl)
-- **Anonymous/public shortening** without user accounts (use traditional shorteners)
-- **Extreme scale** (billions of URLs) without entity organization (build custom solution)
-- **Zero infrastructure** requirements (use hosted services)
-
-LongURL shines when you need **programmatic control** and **business context** for your URLs.
-
 ## Database Setup
 
 ### Minimal Required Schema
