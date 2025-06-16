@@ -278,14 +278,14 @@ async function main() {
         domain, 
         enableShortening: !isFrameworkMode 
       }, testConfig);
-      
-      if (result.success) {
-        console.log('✅ URL generated successfully!');
+    
+    if (result.success) {
+      console.log('✅ URL generated successfully!');
         console.log(`🔗 ${isFrameworkMode ? 'Managed' : 'Short'} URL: ${result.shortUrl}`);
-        console.log(`🆔 URL ID: ${result.urlId}`);
-      } else {
-        console.log(`❌ Generation failed: ${result.error}`);
-      }
+      console.log(`🆔 URL ID: ${result.urlId}`);
+    } else {
+      console.log(`❌ Generation failed: ${result.error}`);
+    }
     }
     
     console.log('\n💡 This demonstrates the URL structure your app would generate.');
