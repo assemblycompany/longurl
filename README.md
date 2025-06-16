@@ -1,4 +1,4 @@
-# LongURL - Programmable URL Shortener
+# LongURL - Programmable URL Management Framework
 
 > **Infrastructure-as-code for URLs. Built for developers who need control.**
 
