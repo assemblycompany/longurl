@@ -7,6 +7,7 @@ exports.generateBase62Id = exports.BASE62_ALPHABET = void 0;
 exports.buildEntityUrl = buildEntityUrl;
 exports.parseEntityUrl = parseEntityUrl;
 exports.isValidUrlId = isValidUrlId;
+exports.createEntitySlug = createEntitySlug;
 const nanoid_1 = require("nanoid");
 /**
  * Base62 alphabet for URL-safe ID generation
@@ -78,14 +79,37 @@ function parseEntityUrl(urlPath, validEntityTypes) {
  * Validate if a string is a valid URL ID
  *
  * @param urlId String to validate
- * @param expectedLength Expected length (default: 6)
- * @returns True if valid Base62 string of correct length
+ * @param expectedLength Expected length (default: 6) - ignored for framework mode
+ * @param isFrameworkMode Whether we're in framework mode (non-shortened URLs)
+ * @returns True if valid Base62 string of correct length, or valid slug in framework mode
  */
-function isValidUrlId(urlId, expectedLength = 6) {
-    if (!urlId || urlId.length !== expectedLength) {
+function isValidUrlId(urlId, expectedLength = 6, isFrameworkMode = false) {
+    if (!urlId) {
+        return false;
+    }
+    if (isFrameworkMode) {
+        // Framework mode: accept URL-safe slugs (alphanumeric, hyphens, underscores)
+        return /^[a-zA-Z0-9_-]+$/.test(urlId) && urlId.length <= 100; // reasonable max length
+    }
+    // Shortening mode: strict Base62 validation
+    if (urlId.length !== expectedLength) {
         return false;
     }
     // Check if all characters are in Base62 alphabet
     return exports.BASE62_ALPHABET.split('').some(char => urlId.includes(char)) &&
         urlId.split('').every(char => exports.BASE62_ALPHABET.includes(char));
+}
+/**
+ * Create a URL-safe slug from an entity ID (for framework mode)
+ *
+ * @param entityId The entity ID to slugify
+ * @returns URL-safe slug
+ */
+function createEntitySlug(entityId) {
+    return entityId
+        .toString()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '-') // Replace non-alphanumeric with hyphens
+        .replace(/-+/g, '-') // Collapse multiple hyphens
+        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
 }

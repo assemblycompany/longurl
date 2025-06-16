@@ -15,6 +15,7 @@ import { GenerationResult, DatabaseConfig } from '../types';
 export declare function generateUrlId(entityType: string, entityId: string, options?: {
     idLength?: number;
     domain?: string;
+    enableShortening?: boolean;
 }, dbConfig?: DatabaseConfig): Promise<GenerationResult>;
 /**
  * Validate whether a string is a valid URL ID
@@ -23,4 +24,4 @@ export declare function generateUrlId(entityType: string, entityId: string, opti
  * @param idLength Expected length (default: 6)
  * @returns True if valid, false otherwise
  */
-export declare function validateUrlId(urlId: string, idLength?: number): boolean;
+export declare function validateUrlId(urlId: string, idLength?: number, isFrameworkMode?: boolean): boolean;

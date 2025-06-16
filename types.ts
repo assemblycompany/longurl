@@ -73,6 +73,21 @@ export interface LongURLConfig {
    */
   includeEntityInPath?: boolean;
   
+  /** 
+   * Enable URL shortening with random IDs (default: true)
+   * 
+   * Design Philosophy: Transform from URL shortener to URL management framework.
+   * - true (default): Generate short random IDs -> https://yourdomain.co/product/X7gT5p
+   * - false (framework mode): Use entity IDs directly -> https://yourdomain.co/product/laptop-123
+   * 
+   * Framework mode benefits:
+   * - Readable URLs with entity context
+   * - SEO-friendly URL structure  
+   * - Still gets analytics, collision detection, and entity management
+   * - Perfect for content management, e-commerce catalogs, user profiles
+   */
+  enableShortening?: boolean;
+  
   /** Supabase configuration (default database) */
   supabase?: {
     url?: string;  // defaults to SUPABASE_URL env var

@@ -88,15 +88,41 @@ export function parseEntityUrl(
  * Validate if a string is a valid URL ID
  * 
  * @param urlId String to validate
- * @param expectedLength Expected length (default: 6)
- * @returns True if valid Base62 string of correct length
+ * @param expectedLength Expected length (default: 6) - ignored for framework mode
+ * @param isFrameworkMode Whether we're in framework mode (non-shortened URLs)
+ * @returns True if valid Base62 string of correct length, or valid slug in framework mode
  */
-export function isValidUrlId(urlId: string, expectedLength = 6): boolean {
-  if (!urlId || urlId.length !== expectedLength) {
+export function isValidUrlId(urlId: string, expectedLength = 6, isFrameworkMode = false): boolean {
+  if (!urlId) {
+    return false;
+  }
+  
+  if (isFrameworkMode) {
+    // Framework mode: accept URL-safe slugs (alphanumeric, hyphens, underscores)
+    return /^[a-zA-Z0-9_-]+$/.test(urlId) && urlId.length <= 100; // reasonable max length
+  }
+  
+  // Shortening mode: strict Base62 validation
+  if (urlId.length !== expectedLength) {
     return false;
   }
   
   // Check if all characters are in Base62 alphabet
   return BASE62_ALPHABET.split('').some(char => urlId.includes(char)) &&
          urlId.split('').every(char => BASE62_ALPHABET.includes(char));
+}
+
+/**
+ * Create a URL-safe slug from an entity ID (for framework mode)
+ * 
+ * @param entityId The entity ID to slugify
+ * @returns URL-safe slug
+ */
+export function createEntitySlug(entityId: string): string {
+  return entityId
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-')  // Replace non-alphanumeric with hyphens
+    .replace(/-+/g, '-')           // Collapse multiple hyphens
+    .replace(/^-|-$/g, '');        // Remove leading/trailing hyphens
 } 

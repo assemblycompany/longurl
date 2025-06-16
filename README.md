@@ -146,6 +146,54 @@ const longurl = new LongURL({
 const longurl = new LongURL(); // Uses env var
 ```
 
+## 🆕 Framework Mode: Beyond URL Shortening
+
+**NEW:** LongURL now works as a complete **URL management framework**, not just a shortener. Choose between ultra-short URLs and SEO-friendly readable URLs while keeping all the powerful entity management features.
+
+### Two Modes, One Library
+
+```typescript
+// 🔗 SHORTENING MODE (Default - Backward Compatible)
+const shortener = new LongURL({ enableShortening: true });
+await shortener.shorten('product', 'laptop-dell-xps-13', 'https://...');
+// Result: https://yourdomain.co/product/X7gT5p
+// Perfect for: Social media, SMS, QR codes, character limits
+
+// 📈 FRAMEWORK MODE (New - SEO Friendly)
+const urlManager = new LongURL({ enableShortening: false });
+await urlManager.manageUrl('product', 'laptop-dell-xps-13', 'https://...');
+// Result: https://yourdomain.co/product/laptop-dell-xps-13
+// Perfect for: SEO, content management, readable URLs, branded experiences
+```
+
+### Environment Control
+
+```bash
+# Enable framework mode globally
+export LONGURL_SHORTEN=false
+
+# Now all URLs use readable entity IDs by default
+const longurl = new LongURL(); // Uses framework mode
+```
+
+### Zero-Friction Testing
+
+Test both modes instantly without database setup:
+
+```bash
+# Compare both modes
+npx longurl test product laptop-dell-xps-13 mystore.co
+
+# Test only framework mode
+npx longurl test product laptop-dell-xps-13 mystore.co --framework
+```
+
+**Framework mode gives you:**
+- ✅ **SEO-friendly URLs** with readable paths
+- ✅ **All the same features**: analytics, collision detection, entity management
+- ✅ **Backward compatible**: existing code unchanged
+- ✅ **Environment configurable**: switch modes without code changes
+
 ## Why LongURL?
 
 ### 🔧 **Developer-First Architecture**
@@ -447,6 +495,7 @@ export default async function Dashboard() {
 - `new LongURL(config?)` - Create instance with optional configuration
 - `longurl.initialize()` - Initialize the adapter connection
 - `longurl.shorten(entityType, entityId, url, metadata?)` - Shorten URL with entity context
+- `longurl.manageUrl(entityType, entityId, url, metadata?)` - Manage URL (better naming for framework mode)
 - `longurl.resolve(urlId)` - Resolve URL and track click
 - `longurl.analytics(urlId)` - Get detailed analytics for a URL
 - `longurl.healthCheck()` - Check adapter health

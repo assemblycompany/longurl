@@ -30,9 +30,14 @@ export class LongURL {
     const includeEntityInPath = config.includeEntityInPath ?? 
       (process.env.LONGURL_INCLUDE_ENTITY_IN_PATH === 'true');
     
+    // Handle enableShortening with environment variable fallback
+    const enableShortening = config.enableShortening ?? 
+      (process.env.LONGURL_SHORTEN !== 'false'); // Default to true unless explicitly set to 'false'
+    
     this.config = {
       ...config,
-      includeEntityInPath
+      includeEntityInPath,
+      enableShortening
     };
     
     // Progressive disclosure: Zero config -> Simple config -> Advanced config
@@ -110,6 +115,8 @@ export class LongURL {
 
   /**
    * Shorten a URL for a specific entity
+   * 
+   * Note: For framework mode (readable URLs), consider using manageUrl() for clarity
    */
   async shorten(
     entityType: string,
@@ -130,7 +137,9 @@ export class LongURL {
       const result = await generateUrlId(
         entityType,
         entityId,
-        metadata || {},
+        { 
+          enableShortening: this.config.enableShortening 
+        },
         this.getLegacyDbConfig()
       );
 
@@ -172,6 +181,21 @@ export class LongURL {
         error: `Failed to shorten URL: ${error instanceof Error ? error.message : String(error)}`
       };
     }
+  }
+
+  /**
+   * Manage a URL for a specific entity (semantic alias for framework mode)
+   * 
+   * This is the same as shorten() but with clearer naming for framework mode.
+   * Use this when enableShortening=false for better code readability.
+   */
+  async manageUrl(
+    entityType: string,
+    entityId: string,
+    originalUrl: string,
+    metadata?: Record<string, any>
+  ): Promise<GenerationResult> {
+    return this.shorten(entityType, entityId, originalUrl, metadata);
   }
 
   /**

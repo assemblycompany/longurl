@@ -20,8 +20,40 @@ const collision_1 = require("./collision");
  */
 async function generateUrlId(entityType, entityId, options = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
     try {
-        const { idLength = 6, domain = 'longurl.co' } = options;
-        // Generate initial URL ID
+        const { idLength = 6, domain = 'longurl.co', enableShortening = true } = options;
+        // Framework Mode: Use entity ID directly instead of generating random ID
+        if (!enableShortening) {
+            const urlId = (0, utils_1.createEntitySlug)(entityId);
+            // Still check for collisions in framework mode
+            try {
+                const collisionExists = await (0, collision_1.checkCollision)(entityType, urlId, dbConfig);
+                if (collisionExists) {
+                    return {
+                        urlId: '',
+                        shortUrl: '',
+                        success: false,
+                        error: `Entity ID "${entityId}" conflicts with existing URL. Entity IDs must be unique within entity type "${entityType}".`
+                    };
+                }
+            }
+            catch (error) {
+                // Database not configured - continue without collision checking
+                console.log("⚠️  Database not fully configured for collision checking in framework mode");
+                console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+                console.log("🎯 Continuing with framework URL generation");
+            }
+            // Build the URL (framework mode always includes entity in path for readability)
+            const shortUrl = (0, utils_1.buildEntityUrl)(domain, entityType, urlId);
+            return {
+                urlId,
+                shortUrl,
+                success: true,
+                entityType,
+                entityId,
+                originalUrl: shortUrl
+            };
+        }
+        // Shortening Mode: Generate random Base62 ID
         let urlId = (0, utils_1.generateBase62Id)(idLength);
         let attempts = 1;
         const MAX_ATTEMPTS = 5;
@@ -88,6 +120,6 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
  * @param idLength Expected length (default: 6)
  * @returns True if valid, false otherwise
  */
-function validateUrlId(urlId, idLength = 6) {
-    return (0, utils_1.isValidUrlId)(urlId, idLength);
+function validateUrlId(urlId, idLength = 6, isFrameworkMode = false) {
+    return (0, utils_1.isValidUrlId)(urlId, idLength, isFrameworkMode);
 }

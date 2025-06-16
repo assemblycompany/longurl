@@ -141,7 +141,7 @@ async function main() {
         console.log('Commands:');
         console.log('  generate <entity-type> <table-name> <primary-key> [limit] [--dry-run]');
         console.log('    Generate URL IDs for entities in a specific table');
-        console.log('  test <entity-type> <entity-id> [domain]');
+        console.log('  test <entity-type> <entity-id> [domain] [--framework]');
         console.log('    Test URL generation for a single entity (no database required)');
         console.log('');
         console.log('Examples:');
@@ -149,6 +149,11 @@ async function main() {
         console.log('  longurl-cli generate customer customers customer_id 100 --dry-run');
         console.log('  longurl-cli test product laptop-123');
         console.log('  longurl-cli test user user-456 mysite.com');
+        console.log('  longurl-cli test product laptop-dell-xps-13 mystore.co --framework');
+        console.log('');
+        console.log('Test Mode Options:');
+        console.log('  (no flag)     Compare both shortening and framework modes');
+        console.log('  --framework   Test only framework mode (readable URLs)');
         console.log('');
         console.log('Environment Variables:');
         console.log('  SUPABASE_URL              Supabase project URL');
@@ -196,15 +201,22 @@ async function main() {
         const entityType = args[1];
         const entityId = args[2];
         const domain = args[3] || 'yourdomain.co';
+        const modeFlag = args[4];
         if (!entityType || !entityId) {
             console.error('Error: entity-type and entity-id are required');
-            console.error('Usage: longurl-cli test <entity-type> <entity-id> [domain]');
+            console.error('Usage: longurl-cli test <entity-type> <entity-id> [domain] [--framework]');
+            console.error('');
+            console.error('Options:');
+            console.error('  --framework    Test framework mode (readable URLs)');
+            console.error('  (default)      Test shortening mode (random IDs)');
             process.exit(1);
         }
+        const isFrameworkMode = modeFlag === '--framework' || process.env.LONGURL_SHORTEN === 'false';
         console.log(`🧪 Testing URL generation (no database required)`);
         console.log(`Entity Type: ${entityType}`);
         console.log(`Entity ID: ${entityId}`);
         console.log(`Domain: ${domain}`);
+        console.log(`Mode: ${isFrameworkMode ? 'Framework (readable URLs)' : 'Shortening (random IDs)'}`);
         console.log('');
         // Create minimal config for testing (no database operations)
         const testConfig = {
@@ -213,18 +225,60 @@ async function main() {
             lookupTable: 'short_urls',
             urlIdColumn: 'url_id'
         };
-        const result = await (0, generator_1.generateUrlId)(entityType, entityId, { domain }, testConfig);
-        if (result.success) {
-            console.log('✅ URL generated successfully!');
-            console.log(`🔗 Short URL: ${result.shortUrl}`);
-            console.log(`🆔 URL ID: ${result.urlId}`);
-            console.log('');
-            console.log('💡 This demonstrates the URL structure your app would generate.');
-            console.log('   Add database tables to enable collision detection and persistence.');
+        // Test both modes if not specified
+        if (!modeFlag) {
+            console.log('=== SHORTENING MODE (Traditional) ===');
+            const shortenResult = await (0, generator_1.generateUrlId)(entityType, entityId, {
+                domain,
+                enableShortening: true
+            }, testConfig);
+            if (shortenResult.success) {
+                console.log('✅ Shortened URL generated:');
+                console.log(`🔗 Short URL: ${shortenResult.shortUrl}`);
+                console.log(`🆔 URL ID: ${shortenResult.urlId} (random Base62)`);
+            }
+            else {
+                console.log(`❌ Shortening failed: ${shortenResult.error}`);
+            }
+            console.log('\n=== FRAMEWORK MODE (URL Management) ===');
+            const frameworkResult = await (0, generator_1.generateUrlId)(entityType, entityId, {
+                domain,
+                enableShortening: false
+            }, testConfig);
+            if (frameworkResult.success) {
+                console.log('✅ Framework URL generated:');
+                console.log(`🔗 Managed URL: ${frameworkResult.shortUrl}`);
+                console.log(`🆔 URL ID: ${frameworkResult.urlId} (readable entity ID)`);
+            }
+            else {
+                console.log(`❌ Framework mode failed: ${frameworkResult.error}`);
+            }
+            console.log('\n=== COMPARISON ===');
+            if (shortenResult.success && frameworkResult.success) {
+                console.log(`Shortening: ${shortenResult.shortUrl}`);
+                console.log(`Framework:  ${frameworkResult.shortUrl}`);
+            }
+            console.log('\n=== ENVIRONMENT CONTROL ===');
+            console.log('Set LONGURL_SHORTEN=false to enable framework mode globally');
+            console.log('export LONGURL_SHORTEN=false');
         }
         else {
-            console.log(`❌ Generation failed: ${result.error}`);
+            // Test specific mode
+            const result = await (0, generator_1.generateUrlId)(entityType, entityId, {
+                domain,
+                enableShortening: !isFrameworkMode
+            }, testConfig);
+            if (result.success) {
+                console.log('✅ URL generated successfully!');
+                console.log(`🔗 ${isFrameworkMode ? 'Managed' : 'Short'} URL: ${result.shortUrl}`);
+                console.log(`🆔 URL ID: ${result.urlId}`);
+            }
+            else {
+                console.log(`❌ Generation failed: ${result.error}`);
+            }
         }
+        console.log('\n💡 This demonstrates the URL structure your app would generate.');
+        console.log('   Add database tables to enable collision detection and persistence.');
     }
     else {
         console.error(`Error: Unknown command "${command}"`);

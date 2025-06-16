@@ -37,7 +37,15 @@ export declare function parseEntityUrl(urlPath: string, validEntityTypes?: strin
  * Validate if a string is a valid URL ID
  *
  * @param urlId String to validate
- * @param expectedLength Expected length (default: 6)
- * @returns True if valid Base62 string of correct length
+ * @param expectedLength Expected length (default: 6) - ignored for framework mode
+ * @param isFrameworkMode Whether we're in framework mode (non-shortened URLs)
+ * @returns True if valid Base62 string of correct length, or valid slug in framework mode
  */
-export declare function isValidUrlId(urlId: string, expectedLength?: number): boolean;
+export declare function isValidUrlId(urlId: string, expectedLength?: number, isFrameworkMode?: boolean): boolean;
+/**
+ * Create a URL-safe slug from an entity ID (for framework mode)
+ *
+ * @param entityId The entity ID to slugify
+ * @returns URL-safe slug
+ */
+export declare function createEntitySlug(entityId: string): string;

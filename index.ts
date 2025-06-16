@@ -29,7 +29,7 @@ export type {
 } from './src/core/storage/types';
 
 // Export utilities for advanced usage
-export { generateBase62Id, isValidUrlId } from './utils';
+export { generateBase62Id, isValidUrlId, createEntitySlug } from './utils';
 
 // Advanced exports (for custom adapters and error handling)
 // Most users won't need these
