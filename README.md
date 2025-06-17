@@ -507,6 +507,37 @@ export default async function Dashboard() {
 - `adapter.subscribeToChanges(callback)` - Real-time subscriptions (Supabase)
 - `adapter.getCacheStats()` - Cache performance metrics
 
+## Changelog
+
+### v0.2.2 (June 2025)
+
+**🐛 Fixed: Framework Mode Entity Path Handling**
+
+- **Fixed**: Framework mode now correctly respects the `includeEntityInPath` setting
+- **Before**: `manageUrl()` with `includeEntityInPath: false` would still generate `https://store.co/product/laptop-123`
+- **After**: Now correctly generates clean URLs like `https://store.co/laptop-123`
+
+This enables truly clean, readable URLs in framework mode:
+
+```typescript
+// Now works correctly in v0.2.2!
+const longurl = new LongURL({ 
+  enableShortening: false, 
+  includeEntityInPath: false 
+});
+
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', url);
+// ✅ Result: https://store.co/laptop-dell-xps-13 (clean URL)
+// ❌ Before: https://store.co/product/laptop-dell-xps-13 (forced entity prefix)
+```
+
+Environment variable support:
+```bash
+export LONGURL_SHORTEN=false
+export LONGURL_INCLUDE_ENTITY_IN_PATH=false
+# Now generates clean URLs: store.co/laptop-dell-xps-13
+```
+
 ## Contributing
 
 We're building developer-first URL infrastructure. Contributions welcome!
