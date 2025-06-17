@@ -20,7 +20,7 @@ const collision_1 = require("./collision");
  */
 async function generateUrlId(entityType, entityId, options = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
     try {
-        const { idLength = 6, domain = 'longurl.co', enableShortening = true } = options;
+        const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false } = options;
         // Framework Mode: Use entity ID directly instead of generating random ID
         if (!enableShortening) {
             const urlId = (0, utils_1.createEntitySlug)(entityId);
@@ -42,8 +42,10 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 console.log(`   ${error instanceof Error ? error.message : String(error)}`);
                 console.log("🎯 Continuing with framework URL generation");
             }
-            // Build the URL (framework mode always includes entity in path for readability)
-            const shortUrl = (0, utils_1.buildEntityUrl)(domain, entityType, urlId);
+            // Build the URL (respect includeEntityInPath setting)
+            const shortUrl = includeEntityInPath
+                ? (0, utils_1.buildEntityUrl)(domain, entityType, urlId)
+                : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
             return {
                 urlId,
                 shortUrl,

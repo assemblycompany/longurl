@@ -27,11 +27,12 @@ export async function generateUrlId(
     idLength?: number;
     domain?: string;
     enableShortening?: boolean;
+    includeEntityInPath?: boolean;
   } = {},
   dbConfig: DatabaseConfig = DEFAULT_DB_CONFIG
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', enableShortening = true } = options;
+    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false } = options;
     
     // Framework Mode: Use entity ID directly instead of generating random ID
     if (!enableShortening) {
@@ -55,8 +56,10 @@ export async function generateUrlId(
         console.log("🎯 Continuing with framework URL generation");
       }
       
-      // Build the URL (framework mode always includes entity in path for readability)
-      const shortUrl = buildEntityUrl(domain, entityType, urlId);
+      // Build the URL (respect includeEntityInPath setting)
+      const shortUrl = includeEntityInPath 
+        ? buildEntityUrl(domain, entityType, urlId)
+        : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
       
       return {
         urlId,

@@ -138,7 +138,9 @@ export class LongURL {
         entityType,
         entityId,
         { 
-          enableShortening: this.config.enableShortening 
+          enableShortening: this.config.enableShortening,
+          includeEntityInPath: this.config.includeEntityInPath,
+          domain: this.config.baseUrl || 'https://longurl.co'
         },
         this.getLegacyDbConfig()
       );
