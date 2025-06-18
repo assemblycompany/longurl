@@ -434,6 +434,10 @@ Next.js works seamlessly with LongURL's zero-config approach:
 // .env.local file (automatically loaded by Next.js)
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+// Optional: Custom table names
+LONGURL_TABLE_NAME=my_custom_urls           // Default: 'short_urls'
+LONGURL_ANALYTICS_TABLE_NAME=my_analytics   // Default: 'url_analytics'
 ```
 
 **API Routes (App Router)**:
@@ -508,6 +512,31 @@ export default async function Dashboard() {
 - `adapter.getCacheStats()` - Cache performance metrics
 
 ## Changelog
+
+### v0.2.3 (June 2025)
+
+**🎯 New: Custom Table Name Support**
+
+- **Added**: `LONGURL_TABLE_NAME` environment variable to customize the main table name
+- **Added**: `LONGURL_ANALYTICS_TABLE_NAME` environment variable to customize the analytics table name
+- **Default**: Still uses `short_urls` and `url_analytics` if not specified
+
+This enables flexible database schema management:
+
+```bash
+# Use custom table names
+export LONGURL_TABLE_NAME=my_url_mappings
+export LONGURL_ANALYTICS_TABLE_NAME=my_click_tracking
+
+# Your SQL schema can now use these custom names
+CREATE TABLE my_url_mappings (...);
+CREATE TABLE my_click_tracking (...);
+```
+
+Perfect for:
+- Existing database schemas with naming conventions
+- Multi-tenant applications with prefixed table names
+- Different environments (dev_urls, staging_urls, prod_urls)
 
 ### v0.2.2 (June 2025)
 

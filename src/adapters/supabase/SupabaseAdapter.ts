@@ -19,12 +19,16 @@ export class SupabaseAdapter extends StorageAdapter {
   private cacheEnabled: boolean;
   private cacheTimeout: number;
   private maxCacheSize: number;
-  private tableName: string = 'short_urls';
-  private analyticsTable: string = 'url_analytics';
+  private tableName: string;
+  private analyticsTable: string;
 
   constructor(config: SupabaseConfig) {
     super();
     this.config = config;
+    
+    // Allow environment variable override for table names
+    this.tableName = process.env.LONGURL_TABLE_NAME || 'short_urls';
+    this.analyticsTable = process.env.LONGURL_ANALYTICS_TABLE_NAME || 'url_analytics';
     
     // Cache configuration
     this.cacheEnabled = config.options?.cache?.enabled ?? true;

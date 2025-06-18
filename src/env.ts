@@ -58,7 +58,7 @@ export function createDatabaseConfig(): DatabaseConfig {
   return {
     strategy: StorageStrategy.LOOKUP_TABLE,
     connection: { url, key },
-    lookupTable: 'short_urls',
+    lookupTable: process.env.LONGURL_TABLE_NAME || 'short_urls',
     urlIdColumn: 'url_id'
   };
 }

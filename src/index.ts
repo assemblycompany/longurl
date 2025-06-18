@@ -291,7 +291,7 @@ export class LongURL {
         url: 'adapter-managed',
         key: 'adapter-managed'
       },
-      lookupTable: 'short_urls'
+      lookupTable: process.env.LONGURL_TABLE_NAME || 'short_urls'
     };
   }
 }
