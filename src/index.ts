@@ -114,6 +114,44 @@ export class LongURL {
   }
 
   /**
+   * Transform result to include both new and legacy field names for backward compatibility
+   */
+  private enhanceGenerationResult(result: GenerationResult): GenerationResult {
+    if (result.success && result.urlId && result.shortUrl && result.originalUrl) {
+      return {
+        ...result,
+        // NEW: Clear naming
+        urlSlug: result.urlId,
+        urlBase: result.originalUrl,
+        urlOutput: result.shortUrl,
+        // LEGACY: Keep existing fields for backward compatibility
+        urlId: result.urlId,
+        shortUrl: result.shortUrl,
+        originalUrl: result.originalUrl
+      };
+    }
+    return result;
+  }
+
+  /**
+   * Transform resolution result to include both new and legacy field names
+   */
+  private enhanceResolutionResult<T>(result: ResolutionResult<T>): ResolutionResult<T> {
+    if (result.success && result.urlId && result.originalUrl) {
+      return {
+        ...result,
+        // NEW: Clear naming
+        urlSlug: result.urlId,
+        urlBase: result.originalUrl,
+        // LEGACY: Keep existing fields for backward compatibility
+        urlId: result.urlId,
+        originalUrl: result.originalUrl
+      };
+    }
+    return result;
+  }
+
+  /**
    * Shorten a URL for a specific entity
    * 
    * Note: For framework mode (readable URLs), consider using manageUrl() for clarity
@@ -152,9 +190,11 @@ export class LongURL {
       // Save to storage via adapter
       const entityData = {
         urlId: result.urlId,
+        urlSlug: result.urlId,  // NEW: Clear naming
         entityType,
         entityId,
         originalUrl,
+        urlBase: originalUrl,   // NEW: Clear naming
         metadata: metadata || {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -168,14 +208,20 @@ export class LongURL {
         ? buildEntityUrl(baseUrl, entityType, result.urlId)
         : `${baseUrl}/${result.urlId}`;
 
-      return {
+      const generationResult = {
         success: true,
         urlId: result.urlId,
         shortUrl,
         originalUrl,
         entityType,
-        entityId
+        entityId,
+        // NEW: Clear naming
+        urlSlug: result.urlId,
+        urlBase: originalUrl,
+        urlOutput: shortUrl
       };
+
+      return this.enhanceGenerationResult(generationResult);
 
     } catch (error) {
       return {

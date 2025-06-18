@@ -194,6 +194,34 @@ npx longurl test product laptop-dell-xps-13 mystore.co --framework
 - ✅ **Backward compatible**: existing code unchanged
 - ✅ **Environment configurable**: switch modes without code changes
 
+## Field Naming (Clearer API)
+
+LongURL uses intuitive field names that clearly describe what each field represents:
+
+| Field Purpose | New Name (Recommended) | Legacy Name (Still Supported) |
+|---------------|------------------------|--------------------------------|
+| Public path segment | `urlSlug` | `urlId` |
+| Destination/internal route | `urlBase` | `originalUrl` |
+| Complete generated URL | `urlOutput` | `shortUrl` |
+
+### Examples:
+
+```typescript
+const result = await longurl.shorten('product', 'laptop-123', 'https://...');
+
+// NEW: Clear naming (recommended)
+console.log(result.urlSlug);   // "X7gT5p" - the public path segment
+console.log(result.urlBase);   // "https://..." - where it redirects to  
+console.log(result.urlOutput); // "https://yourdomain.co/X7gT5p" - final URL
+
+// LEGACY: Original naming (still works)
+console.log(result.urlId);      // Same as urlSlug
+console.log(result.originalUrl); // Same as urlBase
+console.log(result.shortUrl);   // Same as urlOutput
+```
+
+Both naming conventions work simultaneously - use whichever feels clearer for your team.
+
 ## Why LongURL?
 
 ### 🔧 **Developer-First Architecture**

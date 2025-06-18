@@ -114,13 +114,22 @@ export interface LongURLConfig {
  * Result of URL generation
  */
 export interface GenerationResult {
-  /** Generated URL ID */
+  /** The public path segment (readable slug or short ID) */
+  urlSlug?: string;
+  
+  /** The destination URL or internal route */
+  urlBase?: string;
+  
+  /** The complete generated URL */
+  urlOutput?: string;
+  
+  /** @deprecated Use urlSlug instead. The public path segment */
   urlId?: string;
   
-  /** Full shortened URL */
+  /** @deprecated Use urlOutput instead. Full shortened URL */
   shortUrl?: string;
   
-  /** Original long URL */
+  /** @deprecated Use urlBase instead. Original long URL or internal route */
   originalUrl?: string;
   
   /** Entity type */
@@ -149,10 +158,16 @@ export interface ResolutionResult<T = any> {
   /** Entity type */
   entityType?: string;
   
-  /** Original long URL */
+  /** The destination URL or internal route */
+  urlBase?: string;
+  
+  /** The public path segment */
+  urlSlug?: string;
+  
+  /** @deprecated Use urlBase instead. Original long URL or internal route */
   originalUrl?: string;
   
-  /** URL ID */
+  /** @deprecated Use urlSlug instead. URL ID */
   urlId?: string;
   
   /** Click count */
@@ -172,7 +187,10 @@ export interface ResolutionResult<T = any> {
  * Analytics data structure
  */
 export interface AnalyticsData {
-  /** URL ID */
+  /** The public path segment */
+  urlSlug: string;
+  
+  /** @deprecated Use urlSlug instead. URL ID */
   urlId: string;
   
   /** Total clicks across all URLs */
