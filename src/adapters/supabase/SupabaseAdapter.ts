@@ -164,10 +164,15 @@ export class SupabaseAdapter extends StorageAdapter {
       if (!data) return null;
 
       const entityData: EntityData = {
+        // Legacy naming (backward compatibility)
         urlId: data.url_id,
+        originalUrl: data.original_url,
+        // New naming (preferred)
+        urlSlug: data.url_id,
+        urlBase: data.original_url,
+        // Common fields
         entityType: data.entity_type,
         entityId: data.entity_id,
-        originalUrl: data.original_url,
         metadata: data.metadata || {},
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -272,7 +277,11 @@ export class SupabaseAdapter extends StorageAdapter {
       const lastClick = clickHistory[0];
 
       return {
+        // Legacy naming (backward compatibility)
         urlId,
+        // New naming (preferred)
+        urlSlug: urlId,
+        // Analytics data
         totalClicks: urlData.click_count || 0,
         createdAt: urlData.created_at,
         updatedAt: urlData.updated_at,
