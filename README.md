@@ -93,13 +93,15 @@ import { LongURL } from 'longurl-js';
 const longurl = new LongURL(); // Automatically uses env vars
 await longurl.initialize();
 
-// Shorten URLs with entity context
-const result = await longurl.shorten(
+// Manage URLs with entity context (primary method)
+const result = await longurl.manageUrl(
   'product',                    // entity type
   'prod-123',                   // entity ID
   'https://very-long-url.com/path',
   { campaign: 'launch', source: 'email' } // metadata
 );
+
+// Note: shorten() still works as an alias for backward compatibility
 
 console.log(result.shortUrl); // https://yourdomain.co/X7gT5p (shortest by default)
 console.log(result.urlId);    // X7gT5p
@@ -155,7 +157,7 @@ const longurl = new LongURL(); // Uses env var
 ```typescript
 // 🔗 SHORTENING MODE (Default - Backward Compatible)
 const shortener = new LongURL({ enableShortening: true });
-await shortener.shorten('product', 'laptop-dell-xps-13', 'https://...');
+await shortener.manageUrl('product', 'laptop-dell-xps-13', 'https://...');
 // Result: https://yourdomain.co/product/X7gT5p
 // Perfect for: Social media, SMS, QR codes, character limits
 
@@ -194,6 +196,39 @@ npx longurl test product laptop-dell-xps-13 mystore.co --framework
 - ✅ **Backward compatible**: existing code unchanged
 - ✅ **Environment configurable**: switch modes without code changes
 
+## 🎯 Pattern URLs: Platform Control
+
+**NEW:** Create branded URLs with platform-controlled endpoint IDs. Perfect for business context + unique identification.
+
+```typescript
+// Pattern-based URL generation
+const result = await longurl.manageUrl(
+  'product', 
+  'vintage-lamp-123',
+  '/api/products/vintage-table-lamp',
+  { category: 'home-decor', brand: 'craftwood' },
+  { urlPattern: 'furniture-vintage-table-lamp-{endpointId}' }
+);
+
+// Result: furniture-vintage-table-lamp-8K9mN2
+// ✅ SEO context: furniture-vintage-table-lamp
+// ✅ Platform control: 8K9mN2 (Base62 endpoint ID)  
+// ✅ Collision detection: on full generated URL
+```
+
+**Benefits:**
+- **Platform ownership** - endpoint IDs controlled by you, not vendors
+- **Better collision resistance** - larger namespace than 6-char shortening
+- **Flexible placement** - `{endpointId}` works anywhere in pattern
+- **Business context** - URLs include semantic meaning
+
+```typescript
+// Flexible patterns
+urlPattern: '{endpointId}-vintage-furniture'        // Beginning
+urlPattern: 'shop-{endpointId}-handmade'           // Middle  
+urlPattern: 'artisan-crafted-table-{endpointId}'   // End
+```
+
 ## Field Naming (Clearer API)
 
 LongURL uses intuitive field names that clearly describe what each field represents:
@@ -207,7 +242,7 @@ LongURL uses intuitive field names that clearly describe what each field represe
 ### Examples:
 
 ```typescript
-const result = await longurl.shorten('product', 'laptop-123', 'https://...');
+const result = await longurl.manageUrl('product', 'laptop-123', 'https://...');
 
 // NEW: Clear naming (recommended)
 console.log(result.urlSlug);   // "X7gT5p" - the public path segment
@@ -221,6 +256,25 @@ console.log(result.shortUrl);   // Same as urlOutput
 ```
 
 Both naming conventions work simultaneously - use whichever feels clearer for your team.
+
+## Method Evolution: `manageUrl()` as Primary
+
+LongURL has evolved from a simple URL shortener to a comprehensive **URL management framework**. To reflect this evolution, `manageUrl()` is now the primary method:
+
+```typescript
+// ✅ PREFERRED: Primary method for URL management
+const result = await longurl.manageUrl('product', 'laptop-123', 'https://...');
+
+// ✅ STILL WORKS: Legacy alias for backward compatibility  
+const result = await longurl.shorten('product', 'laptop-123', 'https://...');
+```
+
+**Why the change?**
+- **Clearer semantics**: "manage" better describes the full feature set
+- **Framework identity**: LongURL is now a URL management platform, not just a shortener
+- **Better DX**: More intuitive for developers building URL-driven applications
+
+**Full backward compatibility**: All existing `shorten()` calls continue to work exactly as before.
 
 ## Why LongURL?
 

@@ -152,11 +152,12 @@ export class LongURL {
   }
 
   /**
-   * Shorten a URL for a specific entity
+   * Manage a URL for a specific entity
    * 
-   * Note: For framework mode (readable URLs), consider using manageUrl() for clarity
+   * Primary method for the LongURL framework. Handles both shortening mode
+   * and framework mode with readable URLs.
    */
-  async shorten(
+  async manageUrl(
     entityType: string,
     entityId: string,
     originalUrl: string,
@@ -230,18 +231,18 @@ export class LongURL {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to shorten URL: ${error instanceof Error ? error.message : String(error)}`
+        error: `Failed to manage URL: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
 
   /**
-   * Manage a URL for a specific entity (semantic alias for framework mode)
+   * Shorten a URL for a specific entity (legacy alias)
    * 
-   * This is the same as shorten() but with clearer naming for framework mode.
-   * Use this when enableShortening=false for better code readability.
+   * @deprecated Use manageUrl() instead for clearer semantics.
+   * This method is maintained for backward compatibility.
    */
-  async manageUrl(
+  async shorten(
     entityType: string,
     entityId: string,
     originalUrl: string,
@@ -250,7 +251,7 @@ export class LongURL {
       urlPattern?: string;
     }
   ): Promise<GenerationResult> {
-    return this.shorten(entityType, entityId, originalUrl, metadata, options);
+    return this.manageUrl(entityType, entityId, originalUrl, metadata, options);
   }
 
   /**
