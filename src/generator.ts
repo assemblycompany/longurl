@@ -11,6 +11,7 @@ import {
 } from '../types';
 import { generateBase62Id, isValidUrlId, buildEntityUrl, createEntitySlug } from '../utils';
 import { checkCollision } from './collision';
+import { generatePatternUrl } from './pattern-generator';
 
 /**
  * Generate a URL ID for an entity
@@ -28,11 +29,21 @@ export async function generateUrlId(
     domain?: string;
     enableShortening?: boolean;
     includeEntityInPath?: boolean;
+    urlPattern?: string;
   } = {},
   dbConfig: DatabaseConfig = DEFAULT_DB_CONFIG
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false } = options;
+    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern } = options;
+    
+    // NEW: Pattern-based URL generation
+    if (urlPattern) {
+      return generatePatternUrl(entityType, entityId, urlPattern, {
+        idLength,
+        domain,
+        includeEntityInPath
+      }, dbConfig);
+    }
     
     // Framework Mode: Use entity ID directly instead of generating random ID
     if (!enableShortening) {

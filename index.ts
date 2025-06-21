@@ -30,6 +30,7 @@ export type {
 
 // Export utilities for advanced usage
 export { generateBase62Id, isValidUrlId, createEntitySlug } from './utils';
+export { validateUrlPattern } from './src/pattern-generator';
 
 // Advanced exports (for custom adapters and error handling)
 // Most users won't need these

@@ -10,6 +10,7 @@ exports.validateUrlId = validateUrlId;
 const types_1 = require("../types");
 const utils_1 = require("../utils");
 const collision_1 = require("./collision");
+const pattern_generator_1 = require("./pattern-generator");
 /**
  * Generate a URL ID for an entity
  *
@@ -20,7 +21,15 @@ const collision_1 = require("./collision");
  */
 async function generateUrlId(entityType, entityId, options = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
     try {
-        const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false } = options;
+        const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern } = options;
+        // NEW: Pattern-based URL generation
+        if (urlPattern) {
+            return (0, pattern_generator_1.generatePatternUrl)(entityType, entityId, urlPattern, {
+                idLength,
+                domain,
+                includeEntityInPath
+            }, dbConfig);
+        }
         // Framework Mode: Use entity ID directly instead of generating random ID
         if (!enableShortening) {
             const urlId = (0, utils_1.createEntitySlug)(entityId);

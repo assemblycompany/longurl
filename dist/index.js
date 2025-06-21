@@ -8,7 +8,7 @@
  * Exports the LongURL class with built-in Supabase support.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSchemaHelp = exports.isTemporaryError = exports.logSupabaseError = exports.parseSupabaseError = exports.SupabaseAdapterError = exports.SupabaseAdapter = exports.StorageAdapter = exports.createEntitySlug = exports.isValidUrlId = exports.generateBase62Id = exports.LongURL = void 0;
+exports.getSchemaHelp = exports.isTemporaryError = exports.logSupabaseError = exports.parseSupabaseError = exports.SupabaseAdapterError = exports.SupabaseAdapter = exports.StorageAdapter = exports.validateUrlPattern = exports.createEntitySlug = exports.isValidUrlId = exports.generateBase62Id = exports.LongURL = void 0;
 // Main export - most users only need this
 var src_1 = require("./src");
 Object.defineProperty(exports, "LongURL", { enumerable: true, get: function () { return src_1.LongURL; } });
@@ -17,6 +17,8 @@ var utils_1 = require("./utils");
 Object.defineProperty(exports, "generateBase62Id", { enumerable: true, get: function () { return utils_1.generateBase62Id; } });
 Object.defineProperty(exports, "isValidUrlId", { enumerable: true, get: function () { return utils_1.isValidUrlId; } });
 Object.defineProperty(exports, "createEntitySlug", { enumerable: true, get: function () { return utils_1.createEntitySlug; } });
+var pattern_generator_1 = require("./src/pattern-generator");
+Object.defineProperty(exports, "validateUrlPattern", { enumerable: true, get: function () { return pattern_generator_1.validateUrlPattern; } });
 // Advanced exports (for custom adapters and error handling)
 // Most users won't need these
 var StorageAdapter_1 = require("./src/core/storage/StorageAdapter");

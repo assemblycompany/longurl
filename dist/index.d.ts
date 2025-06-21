@@ -10,6 +10,7 @@ export { LongURL } from './src';
 export type { LongURLConfig, EntityConfig, GenerationResult, ResolutionResult, AnalyticsData, DatabaseConfig, StorageStrategy } from './types';
 export type { EntityData, AnalyticsData as AdapterAnalyticsData, AdapterConfig } from './src/core/storage/types';
 export { generateBase62Id, isValidUrlId, createEntitySlug } from './utils';
+export { validateUrlPattern } from './src/pattern-generator';
 export { StorageAdapter } from './src/core/storage/StorageAdapter';
 export { SupabaseAdapter, SupabaseAdapterError, parseSupabaseError, logSupabaseError, isTemporaryError, getSchemaHelp } from './src/adapters/supabase';
 export type { SupabaseConfig, SupabaseErrorDetails } from './src/adapters/supabase';

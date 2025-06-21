@@ -17,6 +17,7 @@ export declare function generateUrlId(entityType: string, entityId: string, opti
     domain?: string;
     enableShortening?: boolean;
     includeEntityInPath?: boolean;
+    urlPattern?: string;
 }, dbConfig?: DatabaseConfig): Promise<GenerationResult>;
 /**
  * Validate whether a string is a valid URL ID
