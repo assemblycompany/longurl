@@ -164,6 +164,7 @@ export class LongURL {
     metadata?: Record<string, any>,
     options?: {
       urlPattern?: string;
+      endpointId?: string;
     }
   ): Promise<GenerationResult> {
     try {
@@ -183,7 +184,8 @@ export class LongURL {
           enableShortening: this.config.enableShortening,
           includeEntityInPath: this.config.includeEntityInPath,
           domain: this.config.baseUrl || 'https://longurl.co',
-          urlPattern: options?.urlPattern
+          urlPattern: options?.urlPattern,
+          endpointId: options?.endpointId
         },
         this.getLegacyDbConfig()
       );
@@ -249,6 +251,7 @@ export class LongURL {
     metadata?: Record<string, any>,
     options?: {
       urlPattern?: string;
+      endpointId?: string;
     }
   ): Promise<GenerationResult> {
     return this.manageUrl(entityType, entityId, originalUrl, metadata, options);

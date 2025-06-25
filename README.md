@@ -401,6 +401,56 @@ console.log(analytics.data.lastClickAt);    // 2024-01-15T10:30:00Z
 console.log(analytics.data.clickHistory);   // Array of click events
 ```
 
+### Pattern URLs with Endpoint IDs
+
+LongURL offers an optional pattern system for branded URLs with endpoint ID placeholders:
+
+```typescript
+// Basic URL generation (default)
+const result = await longurl.manageUrl('campaign', 'summer-sale', 'https://shop.com/sale');
+// Shortener mode: https://yourdomain.co/X7gT5p (random Base62 ID)
+// Framework mode: https://yourdomain.co/summer-sale (entity-based slug)
+
+// Pattern URLs with auto-generated endpoint IDs
+const result = await longurl.manageUrl(
+  'campaign', 
+  'summer-sale', 
+  'https://shop.com/sale',
+  { source: 'email' },
+  { urlPattern: 'summer-sale-{endpointId}' }  // Pattern with placeholder
+);
+// Result: https://yourdomain.co/summer-sale-X7gT5p (pattern + generated endpoint ID)
+
+// Pattern URLs with existing endpoint IDs (reuse your IDs)
+const result = await longurl.manageUrl(
+  'campaign',
+  'summer-sale', 
+  'https://shop.com/sale',
+  { source: 'email' },
+  { 
+    urlPattern: 'summer-sale-{endpointId}',
+    endpointId: 'PROMO2024'  // Your existing campaign ID
+  }
+);
+// Result: https://yourdomain.co/summer-sale-PROMO2024
+
+// endpointId also works with basic modes (no pattern)
+const result = await longurl.manageUrl(
+  'campaign', 
+  'summer-sale', 
+  'https://shop.com/sale',
+  { source: 'email' },
+  { endpointId: 'CAMPAIGN2024' }  // Override random/entity generation
+);
+// Result: https://yourdomain.co/CAMPAIGN2024 (or /campaign/CAMPAIGN2024)
+```
+
+**Use cases:**
+- **Branded campaign URLs** with business context and unique identifiers
+- **Reuse existing IDs** across multiple URL patterns for the same campaign  
+- **A/B testing** with consistent tracking identifiers
+- **Integration** with existing campaign management systems
+
 ### Advanced Features
 
 ```typescript

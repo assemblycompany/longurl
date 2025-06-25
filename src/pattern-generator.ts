@@ -30,11 +30,12 @@ export async function generatePatternUrl(
     idLength?: number;
     domain?: string;
     includeEntityInPath?: boolean;
+    endpointId?: string;
   } = {},
   dbConfig: DatabaseConfig
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false } = options;
+    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false, endpointId: providedEndpointId } = options;
     
     // Validate pattern contains {endpointId} placeholder
     if (!urlPattern.includes('{endpointId}')) {
@@ -46,11 +47,30 @@ export async function generatePatternUrl(
       };
     }
     
-    // Generate Base62 ID for collision detection
-    let endpointId = generateBase62Id(idLength);
+    // Use provided endpointId or generate new one
+    let endpointId = providedEndpointId || generateBase62Id(idLength);
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
     let collisionCheckingAvailable = true;
+    
+    // If endpointId was provided, skip collision detection and use it directly
+    if (providedEndpointId) {
+      const urlId = urlPattern.replace('{endpointId}', endpointId);
+      const cleanDomain = domain.replace(/^https?:\/\//, '');
+      
+      const shortUrl = includeEntityInPath 
+        ? `https://${cleanDomain}/${entityType}/${urlId}`
+        : `https://${cleanDomain}/${urlId}`;
+      
+      return {
+        urlId,
+        shortUrl,
+        success: true,
+        entityType,
+        entityId,
+        originalUrl: shortUrl
+      };
+    }
     
     // Replace pattern and check for collisions
     while (attempts < MAX_ATTEMPTS && collisionCheckingAvailable) {

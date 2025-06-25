@@ -21,35 +21,39 @@ const pattern_generator_1 = require("./pattern-generator");
  */
 async function generateUrlId(entityType, entityId, options = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
     try {
-        const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern } = options;
+        const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, endpointId } = options;
         // NEW: Pattern-based URL generation
         if (urlPattern) {
             return (0, pattern_generator_1.generatePatternUrl)(entityType, entityId, urlPattern, {
                 idLength,
                 domain,
-                includeEntityInPath
+                includeEntityInPath,
+                endpointId
             }, dbConfig);
         }
-        // Framework Mode: Use entity ID directly instead of generating random ID
+        // Framework Mode: Use provided endpointId or entity ID directly instead of generating random ID
         if (!enableShortening) {
-            const urlId = (0, utils_1.createEntitySlug)(entityId);
-            // Still check for collisions in framework mode
-            try {
-                const collisionExists = await (0, collision_1.checkCollision)(entityType, urlId, dbConfig);
-                if (collisionExists) {
-                    return {
-                        urlId: '',
-                        shortUrl: '',
-                        success: false,
-                        error: `Entity ID "${entityId}" conflicts with existing URL. Entity IDs must be unique within entity type "${entityType}".`
-                    };
+            const urlId = endpointId || (0, utils_1.createEntitySlug)(entityId);
+            // Skip collision checking if endpointId was provided (developer's responsibility)
+            if (!endpointId) {
+                // Still check for collisions in framework mode when using entity ID
+                try {
+                    const collisionExists = await (0, collision_1.checkCollision)(entityType, urlId, dbConfig);
+                    if (collisionExists) {
+                        return {
+                            urlId: '',
+                            shortUrl: '',
+                            success: false,
+                            error: `Entity ID "${entityId}" conflicts with existing URL. Entity IDs must be unique within entity type "${entityType}".`
+                        };
+                    }
                 }
-            }
-            catch (error) {
-                // Database not configured - continue without collision checking
-                console.log("⚠️  Database not fully configured for collision checking in framework mode");
-                console.log(`   ${error instanceof Error ? error.message : String(error)}`);
-                console.log("🎯 Continuing with framework URL generation");
+                catch (error) {
+                    // Database not configured - continue without collision checking
+                    console.log("⚠️  Database not fully configured for collision checking in framework mode");
+                    console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+                    console.log("🎯 Continuing with framework URL generation");
+                }
             }
             // Build the URL (respect includeEntityInPath setting)
             const shortUrl = includeEntityInPath
@@ -64,11 +68,26 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 originalUrl: shortUrl
             };
         }
-        // Shortening Mode: Generate random Base62 ID
-        let urlId = (0, utils_1.generateBase62Id)(idLength);
+        // Shortening Mode: Use provided endpointId or generate random Base62 ID
+        let urlId = endpointId || (0, utils_1.generateBase62Id)(idLength);
         let attempts = 1;
         const MAX_ATTEMPTS = 5;
         let collisionCheckingAvailable = true;
+        // If endpointId was provided, skip collision detection and use it directly
+        if (endpointId) {
+            // Build the URL (respect includeEntityInPath setting)
+            const shortUrl = includeEntityInPath
+                ? (0, utils_1.buildEntityUrl)(domain, entityType, urlId)
+                : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
+            return {
+                urlId,
+                shortUrl,
+                success: true,
+                entityType,
+                entityId,
+                originalUrl: shortUrl
+            };
+        }
         // Check for collisions and regenerate if necessary
         while (attempts < MAX_ATTEMPTS && collisionCheckingAvailable) {
             try {
@@ -103,8 +122,10 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 error: `Failed to generate unique ID after ${MAX_ATTEMPTS} attempts`
             };
         }
-        // Build the short URL
-        const shortUrl = (0, utils_1.buildEntityUrl)(domain, entityType, urlId);
+        // Build the short URL (respect includeEntityInPath setting)
+        const shortUrl = includeEntityInPath
+            ? (0, utils_1.buildEntityUrl)(domain, entityType, urlId)
+            : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
         // Return the successfully generated ID
         return {
             urlId,
