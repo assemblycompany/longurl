@@ -21,13 +21,20 @@ export class SupabaseAdapter extends StorageAdapter {
   private maxCacheSize: number;
   private tableName: string;
   private analyticsTable: string;
+  private tableSchema: {
+    table: string;
+    slugColumn: string;
+    baseColumn: string;
+    analyticsSlugColumn: string;
+  } | null = null;
 
   constructor(config: SupabaseConfig) {
     super();
     this.config = config;
     
     // Allow environment variable override for table names
-    this.tableName = process.env.LONGURL_TABLE_NAME || 'short_urls';
+    // Default to new naming, but will auto-detect and fall back to legacy
+    this.tableName = process.env.LONGURL_TABLE_NAME || 'endpoints';
     this.analyticsTable = process.env.LONGURL_ANALYTICS_TABLE_NAME || 'url_analytics';
     
     // Cache configuration
@@ -110,11 +117,95 @@ export class SupabaseAdapter extends StorageAdapter {
     }
   }
 
+  /**
+   * Auto-detect table schema for backwards compatibility
+   */
+  private async detectTableSchema(): Promise<void> {
+    if (this.tableSchema) return; // Already detected
+
+    // Try new schema first: endpoints table with url_slug/url_base
+    try {
+      const { error: newError } = await this.client.from('endpoints').select('url_slug, url_base').limit(1);
+      if (!newError) {
+        this.tableSchema = {
+          table: 'endpoints',
+          slugColumn: 'url_slug',
+          baseColumn: 'url_base',
+          analyticsSlugColumn: 'url_slug'
+        };
+        this.tableName = 'endpoints';
+        return;
+      }
+    } catch (error) {
+      // Continue to legacy detection
+    }
+
+    // Try legacy schema: short_urls table with url_id/original_url
+    try {
+      const { error: legacyError } = await this.client.from('short_urls').select('url_id, original_url').limit(1);
+      if (!legacyError) {
+        this.tableSchema = {
+          table: 'short_urls',
+          slugColumn: 'url_id',
+          baseColumn: 'original_url',
+          analyticsSlugColumn: 'url_id'
+        };
+        this.tableName = 'short_urls';
+        return;
+      }
+    } catch (error) {
+      // Continue to custom table detection
+    }
+
+    // Try custom table name with new schema
+    if (this.tableName !== 'endpoints' && this.tableName !== 'short_urls') {
+      try {
+        const { error: customError } = await this.client.from(this.tableName).select('url_slug, url_base').limit(1);
+        if (!customError) {
+          this.tableSchema = {
+            table: this.tableName,
+            slugColumn: 'url_slug',
+            baseColumn: 'url_base',
+            analyticsSlugColumn: 'url_slug'
+          };
+          return;
+        }
+      } catch (error) {
+        // Try legacy column names on custom table
+        try {
+          const { error: customLegacyError } = await this.client.from(this.tableName).select('url_id, original_url').limit(1);
+          if (!customLegacyError) {
+            this.tableSchema = {
+              table: this.tableName,
+              slugColumn: 'url_id',
+              baseColumn: 'original_url',
+              analyticsSlugColumn: 'url_id'
+            };
+            return;
+          }
+        } catch (error) {
+          // Fall through to error
+        }
+      }
+    }
+
+    // Default to new schema if nothing detected
+    this.tableSchema = {
+      table: this.tableName,
+      slugColumn: 'url_slug',
+      baseColumn: 'url_base',
+      analyticsSlugColumn: 'url_slug'
+    };
+  }
+
   async initialize(): Promise<void> {
     try {
-      const { error } = await this.client.from(this.tableName).select('count').limit(1);
+      await this.detectTableSchema();
+      
+      const { error } = await this.client.from(this.tableSchema!.table).select('count').limit(1);
       if (error && error.code === 'PGRST116') {
-        console.warn(`Table ${this.tableName} not found. Please create it manually.`);
+        console.warn(`Table ${this.tableSchema!.table} not found. Please create it manually.`);
+        console.warn(`Run setup-tables.sql or migration-from-short-urls.sql to create the proper schema.`);
       } else if (error) {
         this.handleError(error, 'initialize');
       }
@@ -125,17 +216,22 @@ export class SupabaseAdapter extends StorageAdapter {
 
   async save(urlId: string, data: EntityData): Promise<void> {
     try {
+      await this.detectTableSchema();
+      const schema = this.tableSchema!;
+
+      const insertData = {
+        [schema.slugColumn]: urlId,
+        entity_type: data.entityType,
+        entity_id: data.entityId,
+        [schema.baseColumn]: data.originalUrl,
+        metadata: data.metadata || {},
+        created_at: data.createdAt,
+        updated_at: data.updatedAt
+      };
+
       const { error } = await this.client
-        .from(this.tableName)
-        .insert({
-          url_id: urlId,
-          entity_type: data.entityType,
-          entity_id: data.entityId,
-          original_url: data.originalUrl,
-          metadata: data.metadata || {},
-          created_at: data.createdAt,
-          updated_at: data.updatedAt
-        });
+        .from(schema.table)
+        .insert(insertData);
 
       if (error) {
         this.handleError(error, 'save');
@@ -153,23 +249,29 @@ export class SupabaseAdapter extends StorageAdapter {
     if (cached) return cached;
 
     try {
+      await this.detectTableSchema();
+      const schema = this.tableSchema!;
+
       const { data, error } = await this.client
-        .from(this.tableName)
+        .from(schema.table)
         .select('*')
-        .eq('url_id', urlId)
+        .eq(schema.slugColumn, urlId)
         .single();
 
       if (error?.code === 'PGRST116') return null; // Not found - expected
       if (error) this.handleError(error, 'resolve');
       if (!data) return null;
 
+      const slugValue = data[schema.slugColumn];
+      const baseValue = data[schema.baseColumn];
+
       const entityData: EntityData = {
         // Legacy naming (backward compatibility)
-        urlId: data.url_id,
-        originalUrl: data.original_url,
+        urlId: slugValue,
+        originalUrl: baseValue,
         // New naming (preferred)
-        urlSlug: data.url_id,
-        urlBase: data.original_url,
+        urlSlug: slugValue,
+        urlBase: baseValue,
         // Common fields
         entityType: data.entity_type,
         entityId: data.entity_id,
@@ -189,10 +291,13 @@ export class SupabaseAdapter extends StorageAdapter {
     if (this.getCached(urlId)) return true;
 
     try {
+      await this.detectTableSchema();
+      const schema = this.tableSchema!;
+
       const { data, error } = await this.client
-        .from(this.tableName)
-        .select('url_id')
-        .eq('url_id', urlId)
+        .from(schema.table)
+        .select(schema.slugColumn)
+        .eq(schema.slugColumn, urlId)
         .single();
 
       if (error?.code === 'PGRST116') return false; // Not found - expected
@@ -206,9 +311,12 @@ export class SupabaseAdapter extends StorageAdapter {
 
   async incrementClicks(urlId: string, metadata?: Record<string, any>): Promise<void> {
     try {
+      await this.detectTableSchema();
+      const schema = this.tableSchema!;
+
       // Try atomic increment first (if RPC exists)
       const { error: rpcError } = await this.client.rpc('increment_click_count', {
-        url_id_param: urlId
+        url_slug_param: urlId
       });
 
       if (rpcError && rpcError.code !== '42883') { // 42883 = function doesn't exist
@@ -218,20 +326,20 @@ export class SupabaseAdapter extends StorageAdapter {
       // Fallback to manual increment if RPC doesn't exist
       if (rpcError?.code === '42883') {
         const { data: currentData, error: selectError } = await this.client
-          .from(this.tableName)
+          .from(schema.table)
           .select('click_count')
-          .eq('url_id', urlId)
+          .eq(schema.slugColumn, urlId)
           .single();
 
         if (selectError) this.handleError(selectError, 'incrementClicks');
 
         const { error: updateError } = await this.client
-          .from(this.tableName)
+          .from(schema.table)
           .update({ 
             click_count: (currentData?.click_count || 0) + 1,
             updated_at: new Date().toISOString()
           })
-          .eq('url_id', urlId);
+          .eq(schema.slugColumn, urlId);
 
         if (updateError) this.handleError(updateError, 'incrementClicks');
       }
@@ -240,7 +348,7 @@ export class SupabaseAdapter extends StorageAdapter {
       this.client
         .from(this.analyticsTable)
         .insert({
-          url_id: urlId,
+          [schema.analyticsSlugColumn]: urlId,
           timestamp: new Date().toISOString(),
           metadata: metadata || {}
         })
@@ -257,10 +365,13 @@ export class SupabaseAdapter extends StorageAdapter {
 
   async getAnalytics(urlId: string): Promise<AnalyticsData | null> {
     try {
+      await this.detectTableSchema();
+      const schema = this.tableSchema!;
+
       const { data: urlData, error: urlError } = await this.client
-        .from(this.tableName)
+        .from(schema.table)
         .select('click_count, created_at, updated_at')
-        .eq('url_id', urlId)
+        .eq(schema.slugColumn, urlId)
         .single();
 
       if (urlError?.code === 'PGRST116') return null; // Not found - expected
@@ -269,7 +380,7 @@ export class SupabaseAdapter extends StorageAdapter {
       const { data: clickData } = await this.client
         .from(this.analyticsTable)
         .select('timestamp, metadata')
-        .eq('url_id', urlId)
+        .eq(schema.analyticsSlugColumn, urlId)
         .order('timestamp', { ascending: false })
         .limit(100);
 
@@ -305,8 +416,11 @@ export class SupabaseAdapter extends StorageAdapter {
 
   async healthCheck(): Promise<boolean> {
     try {
+      await this.detectTableSchema();
+      const schema = this.tableSchema!;
+      
       const { error } = await this.client
-        .from(this.tableName)
+        .from(schema.table)
         .select('count')
         .limit(1);
       return !error;
@@ -317,11 +431,14 @@ export class SupabaseAdapter extends StorageAdapter {
 
   // Supabase-specific methods
 
-  subscribeToChanges(callback: (payload: any) => void) {
+  async subscribeToChanges(callback: (payload: any) => void) {
+    await this.detectTableSchema();
+    const schema = this.tableSchema!;
+    
     return this.client
       .channel('url-changes')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: this.tableName },
+        { event: '*', schema: 'public', table: schema.table },
         callback
       )
       .subscribe();
@@ -329,18 +446,21 @@ export class SupabaseAdapter extends StorageAdapter {
 
   async saveBatch(data: EntityData[]): Promise<void> {
     try {
+      await this.detectTableSchema();
+      const schema = this.tableSchema!;
+
       const insertData = data.map(item => ({
-        url_id: item.urlId,
+        [schema.slugColumn]: item.urlId,
         entity_type: item.entityType,
         entity_id: item.entityId,
-        original_url: item.originalUrl,
+        [schema.baseColumn]: item.originalUrl,
         metadata: item.metadata || {},
         created_at: item.createdAt,
         updated_at: item.updatedAt
       }));
 
       const { error } = await this.client
-        .from(this.tableName)
+        .from(schema.table)
         .insert(insertData);
 
       if (error) this.handleError(error, 'saveBatch');

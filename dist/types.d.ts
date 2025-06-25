@@ -198,14 +198,37 @@ export interface ParsedEntityUrl {
     urlId: string;
 }
 /**
- * Database record structure for short URLs
+ * Database record structure for URL endpoints
+ */
+export interface EndpointRecord {
+    /** Primary key */
+    id: string;
+    /** URL slug/path segment */
+    url_slug: string;
+    /** Base URL/route target */
+    url_base: string;
+    /** ID of the entity this URL points to (optional) */
+    entity_id?: string;
+    /** Type of entity (optional) */
+    entity_type?: string;
+    /** Click count */
+    click_count: number;
+    /** Metadata (optional) */
+    metadata?: Record<string, any>;
+    /** When the URL was created */
+    created_at: string;
+    /** When the URL was last updated */
+    updated_at: string;
+}
+/**
+ * @deprecated Use EndpointRecord instead. Legacy database record structure for backwards compatibility
  */
 export interface ShortUrlRecord {
     /** Primary key */
     id: string;
-    /** Short URL ID */
+    /** @deprecated Use url_slug instead. Short URL ID */
     url_id: string;
-    /** Original long URL */
+    /** @deprecated Use url_base instead. Original long URL */
     original_url: string;
     /** ID of the entity this URL points to (optional) */
     entity_id?: string;

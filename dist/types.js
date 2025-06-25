@@ -23,6 +23,6 @@ exports.DEFAULT_DB_CONFIG = {
         url: process.env.SUPABASE_URL || '',
         key: process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     },
-    lookupTable: process.env.LONGURL_TABLE_NAME || 'short_urls',
-    urlIdColumn: 'url_id'
+    lookupTable: process.env.LONGURL_TABLE_NAME || 'endpoints',
+    urlIdColumn: 'url_slug'
 };

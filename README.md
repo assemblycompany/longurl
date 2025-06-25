@@ -52,12 +52,12 @@ When ready for production, simply configure Supabase for persistence and collisi
 3. In your dashboard, go to "SQL Editor" and run this schema:
 
 ```sql
-CREATE TABLE short_urls (
+CREATE TABLE endpoints (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  url_id TEXT UNIQUE NOT NULL,
+  url_slug TEXT UNIQUE NOT NULL,
   entity_type TEXT,
   entity_id TEXT,
-  original_url TEXT NOT NULL,
+  url_base TEXT NOT NULL,
   click_count INTEGER DEFAULT 0,
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -65,8 +65,8 @@ CREATE TABLE short_urls (
 );
 
 -- Create indexes for fast lookups
-CREATE INDEX idx_short_urls_url_id ON short_urls(url_id);
-CREATE INDEX idx_short_urls_entity ON short_urls(entity_type, entity_id);
+CREATE INDEX idx_endpoints_url_slug ON endpoints(url_slug);
+CREATE INDEX idx_endpoints_entity ON endpoints(entity_type, entity_id);
 ```
 
 4. Go to "Settings" → "API" and copy your **Project URL** and **service_role** key
@@ -107,7 +107,7 @@ console.log(result.shortUrl); // https://yourdomain.co/X7gT5p (shortest by defau
 console.log(result.urlId);    // X7gT5p
 ```
 
-Check your Supabase dashboard → "Table Editor" → `short_urls` to see your data!
+Check your Supabase dashboard → "Table Editor" → `endpoints` to see your data!
 
 ### Direct Configuration
 
@@ -327,10 +327,10 @@ longurl.shorten('product', 'laptop-pro-2024', 'https://shop.com/product/123', {
 ### Minimal Required Schema
 
 ```sql
-CREATE TABLE short_urls (
+CREATE TABLE endpoints (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  url_id TEXT UNIQUE NOT NULL,
-  original_url TEXT NOT NULL,
+  url_slug TEXT UNIQUE NOT NULL,
+  url_base TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
@@ -338,12 +338,12 @@ CREATE TABLE short_urls (
 ### Recommended Full Schema
 
 ```sql
-CREATE TABLE short_urls (
+CREATE TABLE endpoints (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  url_id TEXT UNIQUE NOT NULL,
+  url_slug TEXT UNIQUE NOT NULL,
   entity_type TEXT,
   entity_id TEXT,
-  original_url TEXT NOT NULL,
+  url_base TEXT NOT NULL,
   click_count INTEGER DEFAULT 0,
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -353,21 +353,25 @@ CREATE TABLE short_urls (
 -- Optional: Analytics table for detailed click tracking
 CREATE TABLE url_analytics (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  url_id TEXT REFERENCES short_urls(url_id),
+  url_slug TEXT REFERENCES endpoints(url_slug),
   timestamp TIMESTAMPTZ DEFAULT NOW(),
   metadata JSONB DEFAULT '{}'
 );
 
 -- Optional: RPC function for atomic click counting
-CREATE OR REPLACE FUNCTION increment_click_count(url_id_param TEXT)
+CREATE OR REPLACE FUNCTION increment_click_count(url_slug_param TEXT)
 RETURNS void AS $$
 BEGIN
-  UPDATE short_urls 
+  UPDATE endpoints 
   SET click_count = click_count + 1, updated_at = NOW()
-  WHERE url_id = url_id_param;
+  WHERE url_slug = url_slug_param;
 END;
 $$ LANGUAGE plpgsql;
 ```
+
+### Legacy Schema Support
+
+LongURL automatically detects and supports the legacy `short_urls` table with `url_id`/`original_url` columns for backwards compatibility. Existing installations continue working without changes.
 
 ## Core Usage
 
@@ -661,7 +665,17 @@ export LONGURL_TABLE_NAME=my_url_mappings
 export LONGURL_ANALYTICS_TABLE_NAME=my_click_tracking
 
 # Your SQL schema can now use these custom names
-CREATE TABLE my_url_mappings (...);
+CREATE TABLE my_url_mappings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  url_slug TEXT UNIQUE NOT NULL,
+  url_base TEXT NOT NULL,
+  entity_type TEXT,
+  entity_id TEXT,
+  click_count INTEGER DEFAULT 0,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 CREATE TABLE my_click_tracking (...);
 ```
 
@@ -669,6 +683,8 @@ Perfect for:
 - Existing database schemas with naming conventions
 - Multi-tenant applications with prefixed table names
 - Different environments (dev_urls, staging_urls, prod_urls)
+
+**Note**: LongURL defaults to the modern `endpoints` table but automatically detects and supports legacy `short_urls` tables for backwards compatibility.
 
 ### v0.2.2 (June 2025)
 
