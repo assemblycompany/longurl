@@ -166,6 +166,7 @@ export class LongURL {
       urlPattern?: string;
       publicId?: string;  // NEW: Clear naming for public-facing identifier
       endpointId?: string; // DEPRECATED: Use publicId instead for clarity
+      includeInSlug?: boolean; // Whether to include publicId in URL slug (default: true)
     }
   ): Promise<GenerationResult> {
     try {
@@ -189,7 +190,8 @@ export class LongURL {
           includeEntityInPath: this.config.includeEntityInPath,
           domain: this.config.baseUrl || 'https://longurl.co',
           urlPattern: options?.urlPattern,
-          publicId: publicId  // NEW: Use publicId parameter
+          publicId: publicId,  // NEW: Use publicId parameter
+          includeInSlug: options?.includeInSlug ?? true  // Default to true for backward compatibility
         },
         this.getLegacyDbConfig()
       );
@@ -257,6 +259,7 @@ export class LongURL {
       urlPattern?: string;
       publicId?: string;  // NEW: Clear naming for public-facing identifier
       endpointId?: string; // DEPRECATED: Use publicId instead for clarity
+      includeInSlug?: boolean; // Whether to include publicId in URL slug (default: true)
     }
   ): Promise<GenerationResult> {
     return this.manageUrl(entityType, entityId, originalUrl, metadata, options);

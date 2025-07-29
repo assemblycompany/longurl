@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025-07-29
+
+### Added
+- **NEW**: `includeInSlug` parameter for public ID management
+  - Added `includeInSlug` option to control whether public IDs appear in URLs
+  - Works in Framework Mode to separate entity identifiers from URL slugs
+  - Allows opaque URLs while preserving business identifiers
+  - Defaults to `true` for backward compatibility
+- **NEW**: Enhanced public ID handling in Framework Mode
+  - `publicId` field always returns the meaningful entity identifier
+  - `urlId` can be random slug when `includeInSlug: false`
+  - Perfect for privacy/security scenarios without losing business context
+
+### Changed
+- **IMPROVED**: Framework Mode behavior with `includeInSlug` option
+  - When `includeInSlug: true` (default): Entity ID appears in URL
+  - When `includeInSlug: false`: Random slug in URL, entity ID preserved in `publicId`
+  - Shortening Mode ignores `includeInSlug` parameter (as intended)
+- **CLARIFIED**: Distinction between Shortening Mode and Framework Mode
+  - Shortening Mode: Random ID serves as both URL slug and public identifier
+  - Framework Mode: Entity ID can be separated from URL slug via `includeInSlug`
+
+### Examples
+
+#### Framework Mode with `includeInSlug: true` (Default)
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false,
+  includeInSlug: true
+});
+// Result: https://yourdomain.co/laptop-dell-xps-13
+// publicId: 'laptop-dell-xps-13' (same as urlId)
+```
+
+#### Framework Mode with `includeInSlug: false`
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false,
+  includeInSlug: false
+});
+// Result: https://yourdomain.co/X7gT5p
+// publicId: 'laptop-dell-xps-13' (preserved separately)
+```
+
+#### Shortening Mode (ignores `includeInSlug`)
+```typescript
+const result = await longurl.manageUrl('campaign', 'summer-sale', 'https://...');
+// Result: https://yourdomain.co/X7gT5p
+// publicId: 'X7gT5p' (same as urlId)
+```
+
 ## [0.3.3] - 2025-07-29
 
 ### Added

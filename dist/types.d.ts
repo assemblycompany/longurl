@@ -19,6 +19,8 @@ export interface UrlGenerationOptions {
     publicId?: string;
     /** DEPRECATED: Use publicId instead for clarity */
     endpointId?: string;
+    /** Whether to include publicId in the URL slug (default: true) */
+    includeInSlug?: boolean;
 }
 /**
  * Entity configuration for custom entity types

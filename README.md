@@ -243,6 +243,118 @@ urlPattern: 'shop-{endpointId}-handmade'         // Middle
 urlPattern: 'artisan-crafted-table-{endpointId}' // End
 ```
 
+## 🆕 Public ID Management: `includeInSlug` Option
+
+**NEW:** Control whether your public identifier appears in the URL or is kept separate. Perfect for scenarios where you want to preserve business identifiers while using opaque URLs.
+
+### How It Works
+
+```typescript
+// Framework Mode with includeInSlug: true (default)
+const result = await longurl.manageUrl(
+  'product', 
+  'laptop-dell-xps-13',
+  'https://shop.com/laptop',
+  { category: 'electronics' },
+  { 
+    enableShortening: false,  // Framework Mode
+    includeInSlug: true      // Entity ID in URL (default)
+  }
+);
+// Result: https://yourdomain.co/laptop-dell-xps-13
+// publicId: 'laptop-dell-xps-13' (same as urlId)
+
+// Framework Mode with includeInSlug: false
+const result = await longurl.manageUrl(
+  'product', 
+  'laptop-dell-xps-13',
+  'https://shop.com/laptop',
+  { category: 'electronics' },
+  { 
+    enableShortening: false,  // Framework Mode
+    includeInSlug: false     // Random slug in URL
+  }
+);
+// Result: https://yourdomain.co/X7gT5p
+// publicId: 'laptop-dell-xps-13' (preserved separately)
+```
+
+### Use Cases
+
+**`includeInSlug: true` (Default) - SEO-Friendly URLs:**
+```typescript
+// Perfect for: SEO, content management, readable URLs
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false,
+  includeInSlug: true
+});
+// URL: https://yourdomain.co/laptop-dell-xps-13
+// publicId: 'laptop-dell-xps-13'
+```
+
+**`includeInSlug: false` - Opaque URLs with Preserved Identifiers:**
+```typescript
+// Perfect for: Privacy, security, tracking without exposing business logic
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false,
+  includeInSlug: false
+});
+// URL: https://yourdomain.co/X7gT5p
+// publicId: 'laptop-dell-xps-13' (saved separately in your database)
+```
+
+### Database Storage
+
+The `publicId` is always returned in the response, allowing you to store it separately:
+
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false,
+  includeInSlug: false
+});
+
+// Save to your database
+await db.products.update({
+  where: { id: 'laptop-dell-xps-13' },
+  data: {
+    publicId: result.publicId,        // 'laptop-dell-xps-13'
+    urlSlug: result.urlId,           // 'X7gT5p'
+    destinationUrl: result.urlBase    // 'https://...'
+  }
+});
+```
+
+### Shortening Mode Behavior
+
+**Note:** `includeInSlug` only applies to **Framework Mode**. In Shortening Mode, the random ID serves as both the URL slug and public identifier:
+
+```typescript
+// Shortening Mode (enableShortening: true) - includeInSlug is ignored
+const result = await longurl.manageUrl('campaign', 'summer-sale', 'https://...');
+// Result: https://yourdomain.co/X7gT5p
+// publicId: 'X7gT5p' (same as urlId)
+```
+
+### Pattern URLs with `includeInSlug`
+
+```typescript
+// Pattern with includeInSlug: true (default)
+const result = await longurl.manageUrl('product', 'lamp-123', 'https://...', {}, {
+  urlPattern: 'furniture-{publicId}',
+  includeInSlug: true
+});
+// Result: https://yourdomain.co/furniture-X7gT5p
+// publicId: 'X7gT5p'
+
+// Pattern with includeInSlug: false
+const result = await longurl.manageUrl('product', 'lamp-123', 'https://...', {}, {
+  urlPattern: 'furniture-{publicId}',
+  includeInSlug: false
+});
+// Result: https://yourdomain.co/furniture-X7gT5p
+// publicId: 'X7gT5p' (preserved, but URL uses random slug)
+```
+
 ## Field Naming (Clearer API)
 
 LongURL uses intuitive field names that clearly describe what each field represents:
@@ -466,6 +578,35 @@ const result = await longurl.manageUrl(
   { publicId: 'CAMPAIGN2024' }  // Override random/entity generation
 );
 // Result: https://yourdomain.co/CAMPAIGN2024 (or /campaign/CAMPAIGN2024)
+
+### Response Format
+
+All URL generation methods return a consistent response format:
+
+```typescript
+const result = await longurl.manageUrl('campaign', 'summer-sale', 'https://shop.com/sale', {}, {
+  urlPattern: 'summer-sale-{publicId}'
+});
+
+console.log(result);
+// {
+//   success: true,
+//   urlId: 'summer-sale-X7gT5p',           // Full generated URL slug
+//   urlSlug: 'summer-sale-X7gT5p',         // Same as urlId (new naming)
+//   shortUrl: 'https://yourdomain.co/summer-sale-X7gT5p',
+//   urlOutput: 'https://yourdomain.co/summer-sale-X7gT5p', // Same as shortUrl (new naming)
+//   originalUrl: 'https://shop.com/sale',
+//   urlBase: 'https://shop.com/sale',       // Same as originalUrl (new naming)
+//   publicId: 'X7gT5p',                     // ← NEW: Just the generated ID!
+//   entityType: 'campaign',
+//   entityId: 'summer-sale'
+// }
+
+// Access the publicId directly (no URL parsing needed!)
+const publicId = result.publicId; // 'X7gT5p'
+```
+
+**Key benefit**: The `publicId` field gives you direct access to the generated identifier without parsing the URL.
 
 // Pattern URLs with endpointId (DEPRECATED - still works)
 const result = await longurl.manageUrl(

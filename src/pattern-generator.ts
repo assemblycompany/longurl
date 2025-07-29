@@ -31,7 +31,7 @@ export async function generatePatternUrl(
   dbConfig: DatabaseConfig
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false, publicId: providedPublicId, endpointId: providedEndpointId } = options;
+    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false, publicId: providedPublicId, endpointId: providedEndpointId, includeInSlug = true } = options;
     
     // Support both publicId (new) and endpointId (deprecated) for backward compatibility
     const publicId = providedPublicId || providedEndpointId;
@@ -51,12 +51,27 @@ export async function generatePatternUrl(
     
     // Use provided publicId or generate new one
     let finalPublicId = providedPublicId || generateBase62Id(idLength);
+    let urlId: string;
+    
+    // Handle includeInSlug option for pattern URLs
+    if (providedPublicId && !includeInSlug) {
+      // Use provided publicId for the placeholder, but generate random slug
+      const randomSlug = generateBase62Id(idLength);
+      urlId = hasPublicIdPlaceholder 
+        ? urlPattern.replace('{publicId}', randomSlug)
+        : urlPattern.replace('{endpointId}', randomSlug);
+    } else {
+      // Use publicId in the pattern (default behavior)
+      urlId = hasPublicIdPlaceholder 
+        ? urlPattern.replace('{publicId}', finalPublicId)
+        : urlPattern.replace('{endpointId}', finalPublicId);
+    }
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
     let collisionCheckingAvailable = true;
     
-    // If publicId was provided, skip collision detection and use it directly
-    if (providedPublicId) {
+    // If publicId was provided and includeInSlug is true, skip collision detection
+    if (providedPublicId && includeInSlug) {
       // Replace placeholder with provided publicId
       const urlId = hasPublicIdPlaceholder 
         ? urlPattern.replace('{publicId}', finalPublicId)

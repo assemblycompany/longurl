@@ -29,7 +29,7 @@ export async function generateUrlId(
   dbConfig: DatabaseConfig = DEFAULT_DB_CONFIG
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, publicId: providedPublicId, endpointId: providedEndpointId } = options;
+    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, publicId: providedPublicId, endpointId: providedEndpointId, includeInSlug = true } = options;
     
     // Support both publicId (new) and endpointId (deprecated) for backward compatibility
     const publicId = providedPublicId || providedEndpointId;
@@ -46,7 +46,18 @@ export async function generateUrlId(
     
     // Framework Mode: Use provided publicId or entity ID directly instead of generating random ID
     if (!enableShortening) {
-      const urlId = publicId || createEntitySlug(entityId);
+      let urlId: string;
+      let finalPublicId: string;
+      
+      if (publicId) {
+        // Developer provided publicId
+        finalPublicId = publicId;
+        urlId = includeInSlug ? publicId : generateBase62Id(idLength);
+      } else {
+        // Use entity ID
+        finalPublicId = createEntitySlug(entityId);
+        urlId = includeInSlug ? finalPublicId : generateBase62Id(idLength);
+      }
       
       // Skip collision checking if publicId was provided (developer's responsibility)
       if (!publicId) {
@@ -80,17 +91,18 @@ export async function generateUrlId(
         success: true,
         entityType,
         entityId,
-        originalUrl: shortUrl
+        originalUrl: shortUrl,
+        publicId: finalPublicId
       };
     }
     
-    // Shortening Mode: Use provided publicId or generate random Base62 ID
+    // Shortening Mode: Generate random Base62 ID
     let urlId = publicId || generateBase62Id(idLength);
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
     let collisionCheckingAvailable = true;
     
-    // If publicId was provided, skip collision detection and use it directly
+    // If publicId was provided, skip collision detection
     if (publicId) {
       // Build the URL (respect includeEntityInPath setting)
       const shortUrl = includeEntityInPath 
@@ -104,7 +116,7 @@ export async function generateUrlId(
         entityType,
         entityId,
         originalUrl: shortUrl,
-        publicId: urlId
+        publicId: urlId  // In shortening mode, urlId IS the publicId
       };
     }
     
@@ -161,7 +173,7 @@ export async function generateUrlId(
       entityType,
       entityId,
       originalUrl: shortUrl,
-      publicId: urlId
+      publicId: urlId  // In shortening mode, urlId IS the publicId
     };
   } catch (error) {
     return {

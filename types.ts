@@ -32,6 +32,9 @@ export interface UrlGenerationOptions {
   
   /** DEPRECATED: Use publicId instead for clarity */
   endpointId?: string;
+  
+  /** Whether to include publicId in the URL slug (default: true) */
+  includeInSlug?: boolean;
 }
 
 /**
