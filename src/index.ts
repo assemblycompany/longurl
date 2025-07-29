@@ -164,7 +164,8 @@ export class LongURL {
     metadata?: Record<string, any>,
     options?: {
       urlPattern?: string;
-      endpointId?: string;
+      publicId?: string;  // NEW: Clear naming for public-facing identifier
+      endpointId?: string; // DEPRECATED: Use publicId instead for clarity
     }
   ): Promise<GenerationResult> {
     try {
@@ -176,6 +177,9 @@ export class LongURL {
         };
       }
 
+      // Support both publicId (new) and endpointId (deprecated)
+      const publicId = options?.publicId || options?.endpointId;
+
       // Generate URL ID with collision detection
       const result = await generateUrlId(
         entityType,
@@ -185,7 +189,7 @@ export class LongURL {
           includeEntityInPath: this.config.includeEntityInPath,
           domain: this.config.baseUrl || 'https://longurl.co',
           urlPattern: options?.urlPattern,
-          endpointId: options?.endpointId
+          publicId: publicId  // NEW: Use publicId parameter
         },
         this.getLegacyDbConfig()
       );
@@ -251,7 +255,8 @@ export class LongURL {
     metadata?: Record<string, any>,
     options?: {
       urlPattern?: string;
-      endpointId?: string;
+      publicId?: string;  // NEW: Clear naming for public-facing identifier
+      endpointId?: string; // DEPRECATED: Use publicId instead for clarity
     }
   ): Promise<GenerationResult> {
     return this.manageUrl(entityType, entityId, originalUrl, metadata, options);

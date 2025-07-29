@@ -198,10 +198,24 @@ npx longurl test product laptop-dell-xps-13 mystore.co --framework
 
 ## 🎯 Pattern URLs: Platform Control
 
-**NEW:** Create branded URLs with platform-controlled endpoint IDs. Perfect for business context + unique identification.
+**NEW:** Create branded URLs with platform-controlled public identifiers. Perfect for business context + unique identification.
 
 ```typescript
-// Pattern-based URL generation
+// Pattern-based URL generation with publicId (RECOMMENDED)
+const result = await longurl.manageUrl(
+  'product', 
+  'vintage-lamp-123',
+  '/api/products/vintage-table-lamp',
+  { category: 'home-decor', brand: 'craftwood' },
+  { urlPattern: 'furniture-vintage-table-lamp-{publicId}' }
+);
+
+// Result: furniture-vintage-table-lamp-8K9mN2
+// ✅ SEO context: furniture-vintage-table-lamp
+// ✅ Platform control: 8K9mN2 (Base62 public identifier)  
+// ✅ Collision detection: on full generated URL
+
+// Pattern-based URL generation with endpointId (DEPRECATED - still works)
 const result = await longurl.manageUrl(
   'product', 
   'vintage-lamp-123',
@@ -209,24 +223,24 @@ const result = await longurl.manageUrl(
   { category: 'home-decor', brand: 'craftwood' },
   { urlPattern: 'furniture-vintage-table-lamp-{endpointId}' }
 );
-
-// Result: furniture-vintage-table-lamp-8K9mN2
-// ✅ SEO context: furniture-vintage-table-lamp
-// ✅ Platform control: 8K9mN2 (Base62 endpoint ID)  
-// ✅ Collision detection: on full generated URL
 ```
 
 **Benefits:**
-- **Platform ownership** - endpoint IDs controlled by you, not vendors
+- **Platform ownership** - public identifiers controlled by you, not vendors
 - **Better collision resistance** - larger namespace than 6-char shortening
-- **Flexible placement** - `{endpointId}` works anywhere in pattern
+- **Flexible placement** - `{publicId}` works anywhere in pattern
 - **Business context** - URLs include semantic meaning
 
 ```typescript
-// Flexible patterns
-urlPattern: '{endpointId}-vintage-furniture'        // Beginning
-urlPattern: 'shop-{endpointId}-handmade'           // Middle  
-urlPattern: 'artisan-crafted-table-{endpointId}'   // End
+// Flexible patterns with publicId (RECOMMENDED)
+urlPattern: '{publicId}-vintage-furniture'        // Beginning
+urlPattern: 'shop-{publicId}-handmade'           // Middle  
+urlPattern: 'artisan-crafted-table-{publicId}'   // End
+
+// Flexible patterns with endpointId (DEPRECATED - still works)
+urlPattern: '{endpointId}-vintage-furniture'      // Beginning
+urlPattern: 'shop-{endpointId}-handmade'         // Middle  
+urlPattern: 'artisan-crafted-table-{endpointId}' // End
 ```
 
 ## Field Naming (Clearer API)
@@ -410,43 +424,66 @@ console.log(analytics.data.clickHistory);   // Array of click events
 LongURL offers an optional pattern system for branded URLs with endpoint ID placeholders:
 
 ```typescript
+### Pattern URLs with Public Identifiers
+
+LongURL offers an optional pattern system for branded URLs with public identifier placeholders:
+
+```typescript
 // Basic URL generation (default)
 const result = await longurl.manageUrl('campaign', 'summer-sale', 'https://shop.com/sale');
 // Shortener mode: https://yourdomain.co/X7gT5p (random Base62 ID)
 // Framework mode: https://yourdomain.co/summer-sale (entity-based slug)
 
-// Pattern URLs with auto-generated endpoint IDs
+// Pattern URLs with auto-generated public identifiers (RECOMMENDED)
 const result = await longurl.manageUrl(
   'campaign', 
   'summer-sale', 
   'https://shop.com/sale',
   { source: 'email' },
-  { urlPattern: 'summer-sale-{endpointId}' }  // Pattern with placeholder
+  { urlPattern: 'summer-sale-{publicId}' }  // Pattern with placeholder
 );
-// Result: https://yourdomain.co/summer-sale-X7gT5p (pattern + generated endpoint ID)
+// Result: https://yourdomain.co/summer-sale-X7gT5p (pattern + generated public identifier)
 
-// Pattern URLs with existing endpoint IDs (reuse your IDs)
+// Pattern URLs with existing public identifiers (reuse your IDs) - RECOMMENDED
 const result = await longurl.manageUrl(
   'campaign',
   'summer-sale', 
   'https://shop.com/sale',
   { source: 'email' },
   { 
-    urlPattern: 'summer-sale-{endpointId}',
-    endpointId: 'PROMO2024'  // Your existing campaign ID
+    urlPattern: 'summer-sale-{publicId}',
+    publicId: 'PROMO2024'  // Your existing campaign ID
   }
 );
 // Result: https://yourdomain.co/summer-sale-PROMO2024
 
-// endpointId also works with basic modes (no pattern)
+// publicId also works with basic modes (no pattern) - RECOMMENDED
 const result = await longurl.manageUrl(
   'campaign', 
   'summer-sale', 
   'https://shop.com/sale',
   { source: 'email' },
-  { endpointId: 'CAMPAIGN2024' }  // Override random/entity generation
+  { publicId: 'CAMPAIGN2024' }  // Override random/entity generation
 );
 // Result: https://yourdomain.co/CAMPAIGN2024 (or /campaign/CAMPAIGN2024)
+
+// Pattern URLs with endpointId (DEPRECATED - still works)
+const result = await longurl.manageUrl(
+  'campaign', 
+  'summer-sale', 
+  'https://shop.com/sale',
+  { source: 'email' },
+  { urlPattern: 'summer-sale-{endpointId}' }  // DEPRECATED placeholder
+);
+
+// endpointId also works with basic modes (DEPRECATED - still works)
+const result = await longurl.manageUrl(
+  'campaign', 
+  'summer-sale', 
+  'https://shop.com/sale',
+  { source: 'email' },
+  { endpointId: 'CAMPAIGN2024' }  // DEPRECATED parameter
+);
 ```
 
 **Use cases:**

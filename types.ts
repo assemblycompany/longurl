@@ -9,6 +9,32 @@
 import { StorageAdapter } from './src/core/storage/StorageAdapter';
 
 /**
+ * Options for URL generation with backward compatibility
+ */
+export interface UrlGenerationOptions {
+  /** Length of generated ID (default: 6) */
+  idLength?: number;
+  
+  /** Domain for generated URLs */
+  domain?: string;
+  
+  /** Enable URL shortening with random IDs (default: true) */
+  enableShortening?: boolean;
+  
+  /** Include entity type in URL path (default: false) */
+  includeEntityInPath?: boolean;
+  
+  /** URL pattern with placeholders (e.g., 'furniture-vintage-table-lamp-{publicId}') */
+  urlPattern?: string;
+  
+  /** NEW: Clear naming for public-facing identifier */
+  publicId?: string;
+  
+  /** DEPRECATED: Use publicId instead for clarity */
+  endpointId?: string;
+}
+
+/**
  * Entity configuration for custom entity types
  */
 export interface EntityConfig {

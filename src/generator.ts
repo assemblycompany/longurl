@@ -7,9 +7,10 @@
 import { 
   GenerationResult,
   DatabaseConfig,
+  UrlGenerationOptions,
   DEFAULT_DB_CONFIG
 } from '../types';
-import { generateBase62Id, isValidUrlId, buildEntityUrl, createEntitySlug } from '../utils';
+import { generateBase62Id, createEntitySlug, buildEntityUrl, isValidUrlId } from '../utils';
 import { checkCollision } from './collision';
 import { generatePatternUrl } from './pattern-generator';
 
@@ -24,18 +25,14 @@ import { generatePatternUrl } from './pattern-generator';
 export async function generateUrlId(
   entityType: string,
   entityId: string,
-  options: {
-    idLength?: number;
-    domain?: string;
-    enableShortening?: boolean;
-    includeEntityInPath?: boolean;
-    urlPattern?: string;
-    endpointId?: string;
-  } = {},
+  options: UrlGenerationOptions = {},
   dbConfig: DatabaseConfig = DEFAULT_DB_CONFIG
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, endpointId } = options;
+    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, publicId: providedPublicId, endpointId: providedEndpointId } = options;
+    
+    // Support both publicId (new) and endpointId (deprecated) for backward compatibility
+    const publicId = providedPublicId || providedEndpointId;
     
     // NEW: Pattern-based URL generation
     if (urlPattern) {
@@ -43,16 +40,16 @@ export async function generateUrlId(
         idLength,
         domain,
         includeEntityInPath,
-        endpointId
+        publicId  // NEW: Use publicId parameter
       }, dbConfig);
     }
     
-    // Framework Mode: Use provided endpointId or entity ID directly instead of generating random ID
+    // Framework Mode: Use provided publicId or entity ID directly instead of generating random ID
     if (!enableShortening) {
-      const urlId = endpointId || createEntitySlug(entityId);
+      const urlId = publicId || createEntitySlug(entityId);
       
-      // Skip collision checking if endpointId was provided (developer's responsibility)
-      if (!endpointId) {
+      // Skip collision checking if publicId was provided (developer's responsibility)
+      if (!publicId) {
         // Still check for collisions in framework mode when using entity ID
         try {
           const collisionExists = await checkCollision(entityType, urlId, dbConfig);
@@ -87,14 +84,14 @@ export async function generateUrlId(
       };
     }
     
-    // Shortening Mode: Use provided endpointId or generate random Base62 ID
-    let urlId = endpointId || generateBase62Id(idLength);
+    // Shortening Mode: Use provided publicId or generate random Base62 ID
+    let urlId = publicId || generateBase62Id(idLength);
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
     let collisionCheckingAvailable = true;
     
-    // If endpointId was provided, skip collision detection and use it directly
-    if (endpointId) {
+    // If publicId was provided, skip collision detection and use it directly
+    if (publicId) {
       // Build the URL (respect includeEntityInPath setting)
       const shortUrl = includeEntityInPath 
         ? buildEntityUrl(domain, entityType, urlId)

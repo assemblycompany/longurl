@@ -3,7 +3,7 @@
  *
  * Generates unique URL IDs for any entity types.
  */
-import { GenerationResult, DatabaseConfig } from '../types';
+import { GenerationResult, DatabaseConfig, UrlGenerationOptions } from '../types';
 /**
  * Generate a URL ID for an entity
  *
@@ -12,14 +12,7 @@ import { GenerationResult, DatabaseConfig } from '../types';
  * @param options Configuration options
  * @returns Generated URL and result info
  */
-export declare function generateUrlId(entityType: string, entityId: string, options?: {
-    idLength?: number;
-    domain?: string;
-    enableShortening?: boolean;
-    includeEntityInPath?: boolean;
-    urlPattern?: string;
-    endpointId?: string;
-}, dbConfig?: DatabaseConfig): Promise<GenerationResult>;
+export declare function generateUrlId(entityType: string, entityId: string, options?: UrlGenerationOptions, dbConfig?: DatabaseConfig): Promise<GenerationResult>;
 /**
  * Validate whether a string is a valid URL ID
  *

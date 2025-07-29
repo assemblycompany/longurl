@@ -1,23 +1,24 @@
 /**
  * Pattern URL Generator
  * 
- * Handles URL pattern generation with placeholders like {endpointId}
+ * Handles URL pattern generation with placeholders like {publicId}
  * Integrates with existing collision detection and error handling.
  */
 
 import { 
   GenerationResult,
   DatabaseConfig,
+  UrlGenerationOptions
 } from '../types';
 import { generateBase62Id } from '../utils';
 import { checkCollision } from './collision';
 
 /**
- * Generate a URL using a pattern with {endpointId} placeholder
+ * Generate a URL using a pattern with {publicId} placeholder
  * 
  * @param entityType Type of entity (any string)
  * @param entityId Original entity ID (for metadata/context)
- * @param urlPattern Pattern with {endpointId} placeholder (e.g., 'weekend-emergency-plumber-austin-{endpointId}')
+ * @param urlPattern Pattern with {publicId} placeholder (e.g., 'weekend-emergency-plumber-austin-{publicId}')
  * @param options Configuration options
  * @param dbConfig Database configuration for collision detection
  * @returns Generated URL and result info
@@ -26,36 +27,41 @@ export async function generatePatternUrl(
   entityType: string,
   entityId: string,
   urlPattern: string,
-  options: {
-    idLength?: number;
-    domain?: string;
-    includeEntityInPath?: boolean;
-    endpointId?: string;
-  } = {},
+  options: UrlGenerationOptions = {},
   dbConfig: DatabaseConfig
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false, endpointId: providedEndpointId } = options;
+    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false, publicId: providedPublicId, endpointId: providedEndpointId } = options;
     
-    // Validate pattern contains {endpointId} placeholder
-    if (!urlPattern.includes('{endpointId}')) {
+    // Support both publicId (new) and endpointId (deprecated) for backward compatibility
+    const publicId = providedPublicId || providedEndpointId;
+    
+    // Validate pattern contains {publicId} placeholder (NEW) or {endpointId} placeholder (DEPRECATED)
+    const hasPublicIdPlaceholder = urlPattern.includes('{publicId}');
+    const hasEndpointIdPlaceholder = urlPattern.includes('{endpointId}');
+    
+    if (!hasPublicIdPlaceholder && !hasEndpointIdPlaceholder) {
       return {
         urlId: '',
         shortUrl: '',
         success: false,
-        error: 'URL pattern must contain {endpointId} placeholder'
+        error: 'URL pattern must contain {publicId} placeholder (or {endpointId} for backward compatibility)'
       };
     }
     
-    // Use provided endpointId or generate new one
-    let endpointId = providedEndpointId || generateBase62Id(idLength);
+    // Use provided publicId or generate new one
+    let generatedPublicId = publicId || generateBase62Id(idLength);
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
     let collisionCheckingAvailable = true;
     
-    // If endpointId was provided, skip collision detection and use it directly
-    if (providedEndpointId) {
-      const urlId = urlPattern.replace('{endpointId}', endpointId);
+    // If publicId was provided, skip collision detection and use it directly
+    if (publicId) {
+      // Replace placeholder with provided publicId
+      const urlId = hasPublicIdPlaceholder 
+        ? urlPattern.replace('{publicId}', generatedPublicId)
+        : urlPattern.replace('{endpointId}', generatedPublicId);
+      
       const cleanDomain = domain.replace(/^https?:\/\//, '');
       
       const shortUrl = includeEntityInPath 
@@ -74,8 +80,10 @@ export async function generatePatternUrl(
     
     // Replace pattern and check for collisions
     while (attempts < MAX_ATTEMPTS && collisionCheckingAvailable) {
-      // Replace {endpointId} with generated ID
-      const urlId = urlPattern.replace('{endpointId}', endpointId);
+      // Replace placeholder with generated publicId
+      const urlId = hasPublicIdPlaceholder 
+        ? urlPattern.replace('{publicId}', generatedPublicId)
+        : urlPattern.replace('{endpointId}', generatedPublicId);
       
       try {
         // Check collision on the full generated URL ID
@@ -101,8 +109,8 @@ export async function generatePatternUrl(
         
         console.log(`Pattern collision detected for ${entityType}/${urlId}, regenerating (attempt ${attempts})...`);
         
-        // Generate new endpointId and retry
-        endpointId = generateBase62Id(idLength);
+        // Generate new publicId and retry
+        generatedPublicId = generateBase62Id(idLength);
         attempts++;
         
       } catch (error) {
@@ -112,10 +120,13 @@ export async function generatePatternUrl(
         console.log("💡 To fix: Ensure Supabase tables exist (run setup-tables.sql)");
         console.log("🎯 Continuing with pattern URL generation (no collision checking)");
         
-        // Disable collision checking and use current endpointId
+        // Disable collision checking and use current publicId
         collisionCheckingAvailable = false;
         
-        const urlId = urlPattern.replace('{endpointId}', endpointId);
+        const urlId = hasPublicIdPlaceholder 
+          ? urlPattern.replace('{publicId}', generatedPublicId)
+          : urlPattern.replace('{endpointId}', generatedPublicId);
+        
         const cleanDomain = domain.replace(/^https?:\/\//, '');
         
         const shortUrl = includeEntityInPath 
@@ -172,13 +183,16 @@ export function validateUrlPattern(pattern: string): boolean {
     return false;
   }
   
-  // Must contain {endpointId} placeholder
-  if (!pattern.includes('{endpointId}')) {
+  // Must contain {publicId} placeholder (NEW) or {endpointId} placeholder (DEPRECATED)
+  const hasPublicIdPlaceholder = pattern.includes('{publicId}');
+  const hasEndpointIdPlaceholder = pattern.includes('{endpointId}');
+  
+  if (!hasPublicIdPlaceholder && !hasEndpointIdPlaceholder) {
     return false;
   }
   
   // Should not contain other unsupported placeholders for now
-  const supportedPlaceholders = ['{endpointId}'];
+  const supportedPlaceholders = ['{publicId}', '{endpointId}'];
   const allPlaceholders = pattern.match(/\{[^}]+\}/g) || [];
   
   return allPlaceholders.every(placeholder => 

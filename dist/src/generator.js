@@ -21,21 +21,23 @@ const pattern_generator_1 = require("./pattern-generator");
  */
 async function generateUrlId(entityType, entityId, options = {}, dbConfig = types_1.DEFAULT_DB_CONFIG) {
     try {
-        const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, endpointId } = options;
+        const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, publicId: providedPublicId, endpointId: providedEndpointId } = options;
+        // Support both publicId (new) and endpointId (deprecated) for backward compatibility
+        const publicId = providedPublicId || providedEndpointId;
         // NEW: Pattern-based URL generation
         if (urlPattern) {
             return (0, pattern_generator_1.generatePatternUrl)(entityType, entityId, urlPattern, {
                 idLength,
                 domain,
                 includeEntityInPath,
-                endpointId
+                publicId // NEW: Use publicId parameter
             }, dbConfig);
         }
-        // Framework Mode: Use provided endpointId or entity ID directly instead of generating random ID
+        // Framework Mode: Use provided publicId or entity ID directly instead of generating random ID
         if (!enableShortening) {
-            const urlId = endpointId || (0, utils_1.createEntitySlug)(entityId);
-            // Skip collision checking if endpointId was provided (developer's responsibility)
-            if (!endpointId) {
+            const urlId = publicId || (0, utils_1.createEntitySlug)(entityId);
+            // Skip collision checking if publicId was provided (developer's responsibility)
+            if (!publicId) {
                 // Still check for collisions in framework mode when using entity ID
                 try {
                     const collisionExists = await (0, collision_1.checkCollision)(entityType, urlId, dbConfig);
@@ -68,13 +70,13 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 originalUrl: shortUrl
             };
         }
-        // Shortening Mode: Use provided endpointId or generate random Base62 ID
-        let urlId = endpointId || (0, utils_1.generateBase62Id)(idLength);
+        // Shortening Mode: Use provided publicId or generate random Base62 ID
+        let urlId = publicId || (0, utils_1.generateBase62Id)(idLength);
         let attempts = 1;
         const MAX_ATTEMPTS = 5;
         let collisionCheckingAvailable = true;
-        // If endpointId was provided, skip collision detection and use it directly
-        if (endpointId) {
+        // If publicId was provided, skip collision detection and use it directly
+        if (publicId) {
             // Build the URL (respect includeEntityInPath setting)
             const shortUrl = includeEntityInPath
                 ? (0, utils_1.buildEntityUrl)(domain, entityType, urlId)
