@@ -57,6 +57,8 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
+    "DEPRECATION-NOTICE.md",
     "LICENSE"
   ],
   "engines": {
