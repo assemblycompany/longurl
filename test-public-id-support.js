@@ -32,6 +32,7 @@ async function testUrlGenerationLogic() {
       success: result1.success,
       urlId: result1.urlId,
       shortUrl: result1.shortUrl,
+      publicId: result1.publicId,
       error: result1.error
     });
     
@@ -66,6 +67,7 @@ async function testUrlGenerationLogic() {
       success: result2.success,
       urlId: result2.urlId,
       shortUrl: result2.shortUrl,
+      publicId: result2.publicId,
       error: result2.error
     });
     
@@ -135,6 +137,7 @@ async function testUrlGenerationLogic() {
       success: result4.success,
       urlId: result4.urlId,
       shortUrl: result4.shortUrl,
+      publicId: result4.publicId,
       error: result4.error
     });
     
@@ -142,6 +145,7 @@ async function testUrlGenerationLogic() {
       console.log("   ✅ Generated random ID: YES");
       console.log(`   🎲 Generated ID: '${result4.urlId}' (length: ${result4.urlId.length})`);
       console.log("   ✅ Expected length (6):", result4.urlId.length === 6 ? 'YES' : 'NO');
+      console.log("   ✅ publicId returned:", result4.publicId ? 'YES' : 'NO');
     } else {
       console.log("   ❌ Test failed:", result4.error);
     }
@@ -169,17 +173,20 @@ async function testUrlGenerationLogic() {
       success: result5.success,
       urlId: result5.urlId,
       shortUrl: result5.shortUrl,
+      publicId: result5.publicId,
       error: result5.error
     });
     
     if (result5.success) {
       console.log("   ✅ Generated pattern with random ID: YES");
       console.log(`   🎲 Generated urlId: '${result5.urlId}'`);
+      console.log("   ✅ publicId returned:", result5.publicId ? 'YES' : 'NO');
       
       // Extract the generated publicId from the pattern
       const endpointPart = result5.urlId.split('-').pop();
       console.log(`   🔍 Extracted publicId: '${endpointPart}' (length: ${endpointPart.length})`);
       console.log("   ✅ Expected publicId length (6):", endpointPart.length === 6 ? 'YES' : 'NO');
+      console.log("   ✅ publicId matches extracted:", result5.publicId === endpointPart ? 'YES' : 'NO');
     } else {
       console.log("   ❌ Test failed:", result5.error);
     }

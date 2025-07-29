@@ -87,7 +87,8 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 success: true,
                 entityType,
                 entityId,
-                originalUrl: shortUrl
+                originalUrl: shortUrl,
+                publicId: urlId
             };
         }
         // Check for collisions and regenerate if necessary
@@ -135,7 +136,8 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
             success: true,
             entityType,
             entityId,
-            originalUrl: shortUrl
+            originalUrl: shortUrl,
+            publicId: urlId
         };
     }
     catch (error) {

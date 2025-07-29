@@ -50,17 +50,17 @@ export async function generatePatternUrl(
     }
     
     // Use provided publicId or generate new one
-    let generatedPublicId = publicId || generateBase62Id(idLength);
+    let finalPublicId = providedPublicId || generateBase62Id(idLength);
     let attempts = 1;
     const MAX_ATTEMPTS = 5;
     let collisionCheckingAvailable = true;
     
     // If publicId was provided, skip collision detection and use it directly
-    if (publicId) {
+    if (providedPublicId) {
       // Replace placeholder with provided publicId
       const urlId = hasPublicIdPlaceholder 
-        ? urlPattern.replace('{publicId}', generatedPublicId)
-        : urlPattern.replace('{endpointId}', generatedPublicId);
+        ? urlPattern.replace('{publicId}', finalPublicId)
+        : urlPattern.replace('{endpointId}', finalPublicId);
       
       const cleanDomain = domain.replace(/^https?:\/\//, '');
       
@@ -74,7 +74,8 @@ export async function generatePatternUrl(
         success: true,
         entityType,
         entityId,
-        originalUrl: shortUrl
+        originalUrl: shortUrl,
+        publicId: finalPublicId
       };
     }
     
@@ -82,8 +83,8 @@ export async function generatePatternUrl(
     while (attempts < MAX_ATTEMPTS && collisionCheckingAvailable) {
       // Replace placeholder with generated publicId
       const urlId = hasPublicIdPlaceholder 
-        ? urlPattern.replace('{publicId}', generatedPublicId)
-        : urlPattern.replace('{endpointId}', generatedPublicId);
+        ? urlPattern.replace('{publicId}', finalPublicId)
+        : urlPattern.replace('{endpointId}', finalPublicId);
       
       try {
         // Check collision on the full generated URL ID
@@ -103,14 +104,15 @@ export async function generatePatternUrl(
             success: true,
             entityType,
             entityId,
-            originalUrl: shortUrl
+            originalUrl: shortUrl,
+            publicId: finalPublicId
           };
         }
         
         console.log(`Pattern collision detected for ${entityType}/${urlId}, regenerating (attempt ${attempts})...`);
         
         // Generate new publicId and retry
-        generatedPublicId = generateBase62Id(idLength);
+        finalPublicId = generateBase62Id(idLength);
         attempts++;
         
       } catch (error) {
@@ -124,8 +126,8 @@ export async function generatePatternUrl(
         collisionCheckingAvailable = false;
         
         const urlId = hasPublicIdPlaceholder 
-          ? urlPattern.replace('{publicId}', generatedPublicId)
-          : urlPattern.replace('{endpointId}', generatedPublicId);
+          ? urlPattern.replace('{publicId}', finalPublicId)
+          : urlPattern.replace('{endpointId}', finalPublicId);
         
         const cleanDomain = domain.replace(/^https?:\/\//, '');
         
@@ -139,7 +141,8 @@ export async function generatePatternUrl(
           success: true,
           entityType,
           entityId,
-          originalUrl: shortUrl
+          originalUrl: shortUrl,
+          publicId: finalPublicId
         };
       }
     }

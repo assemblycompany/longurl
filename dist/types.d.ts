@@ -128,6 +128,8 @@ export interface GenerationResult {
     entityType?: string;
     /** Original entity ID */
     entityId?: string;
+    /** The generated or provided public ID */
+    publicId?: string;
     /** Whether generation was successful */
     success: boolean;
     /** Error message if generation failed */

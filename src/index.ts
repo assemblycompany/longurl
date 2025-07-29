@@ -121,13 +121,13 @@ export class LongURL {
       return {
         ...result,
         // NEW: Clear naming
-        urlSlug: result.urlId,
-        urlBase: result.originalUrl,
-        urlOutput: result.shortUrl,
+        urlSlug: result.urlSlug || result.urlId,
+        urlBase: result.urlBase || result.originalUrl,
+        urlOutput: result.urlOutput || result.shortUrl,
         // LEGACY: Keep existing fields for backward compatibility
-        urlId: result.urlId,
-        shortUrl: result.shortUrl,
-        originalUrl: result.originalUrl
+        urlId: result.urlSlug || result.urlId,
+        shortUrl: result.urlOutput || result.shortUrl,
+        originalUrl: result.urlBase || result.originalUrl
       };
     }
     return result;

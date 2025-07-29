@@ -103,7 +103,8 @@ export async function generateUrlId(
         success: true,
         entityType,
         entityId,
-        originalUrl: shortUrl
+        originalUrl: shortUrl,
+        publicId: urlId
       };
     }
     
@@ -159,7 +160,8 @@ export async function generateUrlId(
       success: true,
       entityType,
       entityId,
-      originalUrl: shortUrl
+      originalUrl: shortUrl,
+      publicId: urlId
     };
   } catch (error) {
     return {

@@ -13,12 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `publicId` parameter to `generateUrlId()` and `generatePatternUrl()` functions
   - Added `{publicId}` placeholder support in URL patterns
   - Created `UrlGenerationOptions` interface for better type safety
+- **NEW**: `publicId` field in response objects
+  - `GenerationResult` now includes `publicId` field for direct access
+  - Eliminates need to parse URLs to extract generated public IDs
+  - Works for both developer-provided and auto-generated public IDs
 
 ### Changed
 - **IMPROVED**: Clearer distinction between public URL identifiers and database columns
   - `publicId` = 6-char string for URLs (what users see)
   - `endpoint_id` = UUID database primary key (internal)
   - Eliminates confusion between parameter and database column names
+- **FIXED**: Deprecated field warnings in `enhanceGenerationResult()`
+  - Now properly uses new field names (`urlSlug`, `urlBase`, `urlOutput`)
+  - Maintains backward compatibility with deprecated fields
 
 ### Deprecated
 - **DEPRECATED**: `endpointId` parameter (will be removed in future major version)
