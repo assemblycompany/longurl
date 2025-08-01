@@ -35,6 +35,9 @@ export interface UrlGenerationOptions {
   
   /** Whether to include publicId in the URL slug (default: true) */
   includeInSlug?: boolean;
+  
+  /** Whether to generate QR code for the URL (default: true) */
+  generate_qr_code?: boolean;
 }
 
 /**
@@ -169,6 +172,9 @@ export interface GenerationResult {
   
   /** The generated or provided public ID */
   publicId?: string;
+  
+  /** QR code as base64 data URL (if generated) */
+  qrCode?: string;
   
   /** Whether generation was successful */
   success: boolean;

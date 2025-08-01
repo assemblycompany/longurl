@@ -12,6 +12,7 @@ import {
 } from '../types';
 import { generateBase62Id } from '../utils';
 import { checkCollision } from './collision';
+import { generateOptimizedQRCode } from './qr-generator';
 
 /**
  * Generate a URL using a pattern with {publicId} placeholder
@@ -31,7 +32,7 @@ export async function generatePatternUrl(
   dbConfig: DatabaseConfig
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false, publicId: providedPublicId, endpointId: providedEndpointId, includeInSlug = true } = options;
+    const { idLength = 6, domain = 'longurl.co', includeEntityInPath = false, publicId: providedPublicId, endpointId: providedEndpointId, includeInSlug = true, generate_qr_code = true } = options;
     
     // Support both publicId (new) and endpointId (deprecated) for backward compatibility
     const publicId = providedPublicId || providedEndpointId;
@@ -83,6 +84,17 @@ export async function generatePatternUrl(
         ? `https://${cleanDomain}/${entityType}/${urlId}`
         : `https://${cleanDomain}/${urlId}`;
       
+      // Generate QR code if enabled
+      let qrCode: string | undefined;
+      if (generate_qr_code) {
+        try {
+          qrCode = await generateOptimizedQRCode(shortUrl);
+        } catch (error) {
+          console.log("⚠️  QR code generation failed, continuing without QR code");
+          console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      
       return {
         urlId,
         shortUrl,
@@ -90,7 +102,8 @@ export async function generatePatternUrl(
         entityType,
         entityId,
         originalUrl: shortUrl,
-        publicId: finalPublicId
+        publicId: finalPublicId,
+        qrCode
       };
     }
     
@@ -113,6 +126,17 @@ export async function generatePatternUrl(
             ? `https://${cleanDomain}/${entityType}/${urlId}`
             : `https://${cleanDomain}/${urlId}`;
           
+          // Generate QR code if enabled
+          let qrCode: string | undefined;
+          if (generate_qr_code) {
+            try {
+              qrCode = await generateOptimizedQRCode(shortUrl);
+            } catch (error) {
+              console.log("⚠️  QR code generation failed, continuing without QR code");
+              console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+            }
+          }
+          
           return {
             urlId,
             shortUrl,
@@ -120,7 +144,8 @@ export async function generatePatternUrl(
             entityType,
             entityId,
             originalUrl: shortUrl,
-            publicId: finalPublicId
+            publicId: finalPublicId,
+            qrCode
           };
         }
         
@@ -150,6 +175,17 @@ export async function generatePatternUrl(
           ? `https://${cleanDomain}/${entityType}/${urlId}`
           : `https://${cleanDomain}/${urlId}`;
         
+        // Generate QR code if enabled
+        let qrCode: string | undefined;
+        if (generate_qr_code) {
+          try {
+            qrCode = await generateOptimizedQRCode(shortUrl);
+          } catch (error) {
+            console.log("⚠️  QR code generation failed, continuing without QR code");
+            console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+        
         return {
           urlId,
           shortUrl,
@@ -157,7 +193,8 @@ export async function generatePatternUrl(
           entityType,
           entityId,
           originalUrl: shortUrl,
-          publicId: finalPublicId
+          publicId: finalPublicId,
+          qrCode
         };
       }
     }

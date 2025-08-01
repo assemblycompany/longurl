@@ -13,6 +13,7 @@ import {
 import { generateBase62Id, createEntitySlug, buildEntityUrl, isValidUrlId } from '../utils';
 import { checkCollision } from './collision';
 import { generatePatternUrl } from './pattern-generator';
+import { generateOptimizedQRCode } from './qr-generator';
 
 /**
  * Generate a URL ID for an entity
@@ -29,7 +30,7 @@ export async function generateUrlId(
   dbConfig: DatabaseConfig = DEFAULT_DB_CONFIG
 ): Promise<GenerationResult> {
   try {
-    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, publicId: providedPublicId, endpointId: providedEndpointId, includeInSlug = true } = options;
+    const { idLength = 6, domain = 'longurl.co', enableShortening = true, includeEntityInPath = false, urlPattern, publicId: providedPublicId, endpointId: providedEndpointId, includeInSlug = true, generate_qr_code = true } = options;
     
     // Support both publicId (new) and endpointId (deprecated) for backward compatibility
     const publicId = providedPublicId || providedEndpointId;
@@ -85,6 +86,17 @@ export async function generateUrlId(
         ? buildEntityUrl(domain, entityType, urlId)
         : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
       
+      // Generate QR code if enabled
+      let qrCode: string | undefined;
+      if (generate_qr_code) {
+        try {
+          qrCode = await generateOptimizedQRCode(shortUrl);
+        } catch (error) {
+          console.log("⚠️  QR code generation failed, continuing without QR code");
+          console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      
       return {
         urlId,
         shortUrl,
@@ -92,7 +104,8 @@ export async function generateUrlId(
         entityType,
         entityId,
         originalUrl: shortUrl,
-        publicId: finalPublicId
+        publicId: finalPublicId,
+        qrCode
       };
     }
     
@@ -109,6 +122,17 @@ export async function generateUrlId(
         ? buildEntityUrl(domain, entityType, urlId)
         : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
       
+      // Generate QR code if enabled
+      let qrCode: string | undefined;
+      if (generate_qr_code) {
+        try {
+          qrCode = await generateOptimizedQRCode(shortUrl);
+        } catch (error) {
+          console.log("⚠️  QR code generation failed, continuing without QR code");
+          console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      
       return {
         urlId,
         shortUrl,
@@ -116,7 +140,8 @@ export async function generateUrlId(
         entityType,
         entityId,
         originalUrl: shortUrl,
-        publicId: urlId  // In shortening mode, urlId IS the publicId
+        publicId: urlId,  // In shortening mode, urlId IS the publicId
+        qrCode
       };
     }
     
@@ -165,6 +190,17 @@ export async function generateUrlId(
       ? buildEntityUrl(domain, entityType, urlId)
       : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
     
+    // Generate QR code if enabled
+    let qrCode: string | undefined;
+    if (generate_qr_code) {
+      try {
+        qrCode = await generateOptimizedQRCode(shortUrl);
+      } catch (error) {
+        console.log("⚠️  QR code generation failed, continuing without QR code");
+        console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    
     // Return the successfully generated ID
     return {
       urlId,
@@ -173,7 +209,8 @@ export async function generateUrlId(
       entityType,
       entityId,
       originalUrl: shortUrl,
-      publicId: urlId  // In shortening mode, urlId IS the publicId
+      publicId: urlId,  // In shortening mode, urlId IS the publicId
+      qrCode
     };
   } catch (error) {
     return {

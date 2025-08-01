@@ -224,6 +224,7 @@ export class SupabaseAdapter extends StorageAdapter {
         entity_type: data.entityType,
         entity_id: data.entityId,
         [schema.baseColumn]: data.originalUrl,
+        qr_code: data.qrCode || null,
         metadata: data.metadata || {},
         created_at: data.createdAt,
         updated_at: data.updatedAt
@@ -277,7 +278,9 @@ export class SupabaseAdapter extends StorageAdapter {
         entityId: data.entity_id,
         metadata: data.metadata || {},
         createdAt: data.created_at,
-        updatedAt: data.updated_at
+        updatedAt: data.updated_at,
+        // QR code
+        qrCode: data.qr_code || undefined
       };
 
       this.setCache(urlId, entityData);

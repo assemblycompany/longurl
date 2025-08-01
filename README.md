@@ -109,6 +109,22 @@ console.log(result.urlId);    // X7gT5p
 
 Check your Supabase dashboard → "Table Editor" → `endpoints` to see your data!
 
+### Database Migration (Existing Users)
+
+**If you already have a LongURL database, add the QR code column:**
+
+```sql
+-- Add QR code column to existing endpoints table
+ALTER TABLE endpoints ADD COLUMN qr_code TEXT;
+
+-- Verify the column was added
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'endpoints' AND column_name = 'qr_code';
+```
+
+**For new installations, the QR code column is included automatically in the schema above.**
+
 ### Direct Configuration
 
 ```typescript
@@ -353,6 +369,113 @@ const result = await longurl.manageUrl('product', 'lamp-123', 'https://...', {},
 });
 // Result: https://yourdomain.co/furniture-X7gT5p
 // publicId: 'X7gT5p' (preserved, but URL uses random slug)
+```
+
+## 🆕 QR Code Generation
+
+**NEW:** Automatic QR code generation for every URL. Perfect for marketing campaigns, business cards, and offline sharing.
+
+### How It Works
+
+QR codes are generated automatically for every URL and returned as base64 data URLs. You can disable QR generation for performance or privacy reasons.
+
+```typescript
+// QR codes enabled by default
+const result = await longurl.manageUrl(
+  'product', 
+  'laptop-123',
+  'https://shop.com/laptop',
+  { category: 'electronics' }
+);
+// result.qrCode: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+
+// Disable QR code generation
+const result = await longurl.manageUrl(
+  'product', 
+  'laptop-123',
+  'https://shop.com/laptop',
+  { category: 'electronics' },
+  { generate_qr_code: false }
+);
+// result.qrCode: undefined
+```
+
+### Use Cases
+
+**Marketing Campaigns:**
+```typescript
+const result = await longurl.manageUrl('campaign', 'black-friday-2024', 'https://...');
+// Use result.qrCode for:
+// - Print materials
+// - Business cards
+// - Social media posts
+// - Event signage
+```
+
+**Business Applications:**
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...');
+// result.qrCode can be:
+// - Displayed on product pages
+// - Embedded in emails
+// - Shared via messaging apps
+// - Used in physical marketing materials
+```
+
+### QR Code Storage
+
+QR codes are stored in the database as base64 strings and returned in the API response:
+
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-123', 'https://...');
+
+// QR code is automatically stored in database
+// result.qrCode contains the base64 data URL
+
+// Use the QR code immediately
+const qrCodeImage = result.qrCode; // "data:image/png;base64,..."
+
+// Or save to your own storage
+await saveQRCodeToStorage(result.qrCode, result.urlId);
+```
+
+### QR Code Format
+
+- **Format**: PNG image as base64 data URL
+- **Size**: ~1.7KB (optimized for storage)
+- **Quality**: High contrast, readable at small sizes
+- **Error Correction**: Level L (7% recovery)
+
+### Performance Considerations
+
+- **Default**: QR codes generated for every URL
+- **Disable**: Set `generate_qr_code: false` for performance
+- **Storage**: ~1.7KB per QR code in database
+- **Generation**: Asynchronous, non-blocking
+
+### Pattern URLs with QR Codes
+
+```typescript
+// Pattern with QR code generation
+const result = await longurl.manageUrl('product', 'lamp-123', 'https://...', {}, {
+  urlPattern: 'furniture-{publicId}',
+  generate_qr_code: true
+});
+// result.qrCode: "data:image/png;base64,..."
+```
+
+### Shortening Mode Behavior
+
+QR codes work in both Shortening Mode and Framework Mode:
+
+```typescript
+// Shortening Mode with QR code
+const result = await longurl.manageUrl('campaign', 'summer-sale', 'https://...', {}, {
+  enableShortening: true,
+  generate_qr_code: true
+});
+// URL: https://yourdomain.co/X7gT5p
+// QR Code: Generated for the short URL
 ```
 
 ## Field Naming (Clearer API)

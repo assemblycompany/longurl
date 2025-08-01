@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS endpoints (
   entity_type TEXT,
   entity_id TEXT,
   url_base TEXT NOT NULL,
+  qr_code TEXT,
   click_count INTEGER DEFAULT 0,
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),

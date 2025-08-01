@@ -21,6 +21,8 @@ export interface UrlGenerationOptions {
     endpointId?: string;
     /** Whether to include publicId in the URL slug (default: true) */
     includeInSlug?: boolean;
+    /** Whether to generate QR code for the URL (default: true) */
+    generate_qr_code?: boolean;
 }
 /**
  * Entity configuration for custom entity types
@@ -132,6 +134,8 @@ export interface GenerationResult {
     entityId?: string;
     /** The generated or provided public ID */
     publicId?: string;
+    /** QR code as base64 data URL (if generated) */
+    qrCode?: string;
     /** Whether generation was successful */
     success: boolean;
     /** Error message if generation failed */

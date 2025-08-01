@@ -34,6 +34,9 @@ export interface EntityData {
   
   /** Last update timestamp */
   updatedAt: string;
+  
+  /** QR code as base64 data URL (optional) */
+  qrCode?: string;
 }
 
 /**

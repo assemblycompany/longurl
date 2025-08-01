@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2025-07-29
+
+### Added
+- **NEW**: QR code generation for all URLs
+  - Automatic QR code generation for every URL created
+  - QR codes returned as base64 data URLs in API response
+  - Stored in database as `qr_code` column (nullable)
+  - Optimized for storage (~1.7KB per QR code)
+  - Can be disabled with `generate_qr_code: false` option
+- **NEW**: QR code support in all URL generation modes
+  - Works in Shortening Mode and Framework Mode
+  - Works with pattern URLs and custom public IDs
+  - Graceful error handling if QR generation fails
+- **NEW**: QR code utilities and validation
+  - `generateOptimizedQRCode()` function for efficient QR generation
+  - `isValidQRCodeDataUrl()` function for validation
+  - Configurable QR code options (size, error correction, colors)
+
+### Changed
+- **UPDATED**: Database schema to include QR code storage
+  - Added `qr_code` column to `endpoints` table
+  - QR codes stored as base64 strings for immediate use
+  - Backward compatible with existing installations
+- **ENHANCED**: API response to include QR codes
+  - `GenerationResult` now includes `qrCode` field
+  - QR codes available immediately in response
+  - No additional API calls needed for QR code access
+
+### Performance
+- **OPTIMIZED**: QR code generation for production use
+  - Asynchronous generation to avoid blocking
+  - Error handling prevents QR failures from breaking URL generation
+  - Configurable to disable for performance-critical applications
+
+### Examples
+
+#### Basic QR Code Generation
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-123', 'https://...');
+// result.qrCode: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+```
+
+#### Disable QR Code Generation
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-123', 'https://...', {}, {
+  generate_qr_code: false
+});
+// result.qrCode: undefined
+```
+
+#### Framework Mode with QR Code
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false,
+  generate_qr_code: true
+});
+// URL: https://yourdomain.co/laptop-dell-xps-13
+// QR Code: Generated for the readable URL
+```
+
 ## [0.3.5] - 2025-07-29
 
 ### Added

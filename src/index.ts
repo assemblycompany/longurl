@@ -167,6 +167,7 @@ export class LongURL {
       publicId?: string;  // NEW: Clear naming for public-facing identifier
       endpointId?: string; // DEPRECATED: Use publicId instead for clarity
       includeInSlug?: boolean; // Whether to include publicId in URL slug (default: true)
+      generate_qr_code?: boolean; // Whether to generate QR code (default: true)
     }
   ): Promise<GenerationResult> {
     try {
@@ -191,7 +192,8 @@ export class LongURL {
           domain: this.config.baseUrl || 'https://longurl.co',
           urlPattern: options?.urlPattern,
           publicId: publicId,  // NEW: Use publicId parameter
-          includeInSlug: options?.includeInSlug ?? true  // Default to true for backward compatibility
+          includeInSlug: options?.includeInSlug ?? true,  // Default to true for backward compatibility
+          generate_qr_code: options?.generate_qr_code ?? true  // Default to true for QR codes
         },
         this.getLegacyDbConfig()
       );
@@ -210,7 +212,8 @@ export class LongURL {
         urlBase: originalUrl,   // NEW: Clear naming
         metadata: metadata || {},
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        qrCode: result.qrCode  // Include QR code if generated
       };
 
       await this.adapter.save(result.urlId, entityData);
@@ -231,7 +234,9 @@ export class LongURL {
         // NEW: Clear naming
         urlSlug: result.urlId,
         urlBase: originalUrl,
-        urlOutput: shortUrl
+        urlOutput: shortUrl,
+        // QR code from result
+        qrCode: result.qrCode
       };
 
       return this.enhanceGenerationResult(generationResult);
@@ -260,6 +265,7 @@ export class LongURL {
       publicId?: string;  // NEW: Clear naming for public-facing identifier
       endpointId?: string; // DEPRECATED: Use publicId instead for clarity
       includeInSlug?: boolean; // Whether to include publicId in URL slug (default: true)
+      generate_qr_code?: boolean; // Whether to generate QR code (default: true)
     }
   ): Promise<GenerationResult> {
     return this.manageUrl(entityType, entityId, originalUrl, metadata, options);
