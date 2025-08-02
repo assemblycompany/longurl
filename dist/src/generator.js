@@ -86,6 +86,8 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                     console.log(`   ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
+            // Always generate a short URL slug for easy sharing
+            const urlSlugShort = (0, utils_1.generateBase62Id)(idLength);
             return {
                 urlId,
                 shortUrl,
@@ -94,7 +96,8 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 entityId,
                 originalUrl: shortUrl,
                 publicId: finalPublicId,
-                qrCode
+                qrCode,
+                url_slug_short: urlSlugShort
             };
         }
         // Shortening Mode: Generate random Base62 ID
@@ -127,7 +130,8 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 entityId,
                 originalUrl: shortUrl,
                 publicId: urlId, // In shortening mode, urlId IS the publicId
-                qrCode
+                qrCode,
+                url_slug_short: urlId // In shortening mode, urlId IS the short URL
             };
         }
         // Check for collisions and regenerate if necessary
@@ -188,7 +192,8 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
             entityId,
             originalUrl: shortUrl,
             publicId: urlId, // In shortening mode, urlId IS the publicId
-            qrCode
+            qrCode,
+            url_slug_short: urlId // In shortening mode, urlId IS the short URL
         };
     }
     catch (error) {

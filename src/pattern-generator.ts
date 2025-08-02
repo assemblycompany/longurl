@@ -92,6 +92,9 @@ export async function generatePatternUrl(
         }
       }
       
+      // Always generate a short URL slug for easy sharing
+      const urlSlugShort = generateBase62Id(idLength);
+      
       return {
         urlId,
         shortUrl,
@@ -100,7 +103,8 @@ export async function generatePatternUrl(
         entityId,
         originalUrl: shortUrl,
         publicId: finalPublicId,
-        qrCode
+        qrCode,
+        url_slug_short: urlSlugShort
       };
     }
     
@@ -140,6 +144,9 @@ export async function generatePatternUrl(
             }
           }
           
+          // Always generate a short URL slug for easy sharing
+          const urlSlugShort = generateBase62Id(idLength);
+          
           return {
             urlId,
             shortUrl,
@@ -148,7 +155,8 @@ export async function generatePatternUrl(
             entityId,
             originalUrl: shortUrl,
             publicId: finalPublicId,
-            qrCode
+            qrCode,
+            url_slug_short: urlSlugShort
           };
         }
         
@@ -202,6 +210,9 @@ export async function generatePatternUrl(
           }
         }
         
+        // Always generate a short URL slug for easy sharing
+        const urlSlugShort = generateBase62Id(idLength);
+        
         return {
           urlId,
           shortUrl,
@@ -210,7 +221,8 @@ export async function generatePatternUrl(
           entityId,
           originalUrl: shortUrl,
           publicId: finalPublicId,
-          qrCode
+          qrCode,
+          url_slug_short: urlSlugShort
         };
       }
     }

@@ -221,6 +221,24 @@ export class LongURL {
 
       await this.adapter.save(result.urlId, entityData);
 
+      // If we have a short URL slug (Framework Mode), save it too
+      if (result.url_slug_short && result.url_slug_short !== result.urlId) {
+        const shortEntityData = {
+          urlId: result.url_slug_short,
+          urlSlug: result.url_slug_short,
+          entityType,
+          entityId,
+          originalUrl: resolvedOriginalUrl,  // Same url_base
+          urlBase: resolvedOriginalUrl,     // Same url_base
+          metadata: metadata || {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          qrCode: result.qrCode  // Same QR code
+        };
+
+        await this.adapter.save(result.url_slug_short, shortEntityData);
+      }
+
       // Build short URL
       const baseUrl = this.config.baseUrl || 'https://longurl.co';
       const shortUrl = this.config.includeEntityInPath 
@@ -241,7 +259,9 @@ export class LongURL {
         // Include publicId from result
         publicId: result.publicId,
         // QR code from result
-        qrCode: result.qrCode
+        qrCode: result.qrCode,
+        // Short URL slug (always generated in Framework Mode)
+        url_slug_short: result.url_slug_short
       };
 
       return this.enhanceGenerationResult(generationResult);

@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2025-07-29
+
+### Added
+- **NEW**: `url_slug_short` field for built-in short URLs in Framework Mode
+  - Framework Mode now automatically generates both readable and short URLs
+  - `url_slug_short` provides short random IDs for easy sharing (social media, SMS, etc.)
+  - Both URLs redirect to the same `url_base` destination
+  - Stored in database for proper routing and analytics
+  - Maintains naming convention with `url_slug` prefix
+
+### Changed
+- **ENHANCED**: Framework Mode now includes built-in Shortening Mode functionality
+  - Framework Mode = SEO-friendly URLs + built-in short URLs
+  - `publicId` preserves business context (entity identifiers, campaign names)
+  - `url_slug_short` provides consistent short format for sharing
+  - Both URLs get full analytics and tracking
+  - Perfect for scenarios requiring both SEO and sharing optimization
+
+### Examples
+
+#### Framework Mode with built-in short URL
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false
+});
+// URL: https://yourdomain.co/laptop-dell-xps-13 (readable, SEO-friendly)
+// publicId: 'laptop-dell-xps-13' (business identifier)
+// url_slug_short: '5jGX9H' (short for sharing)
+// Both redirect to same destination
+```
+
+#### Pattern URLs with built-in short URL
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-123', '/hub/earthfare-organic-bananas-{publicId}', {}, {
+  urlPattern: 'earthfare-organic-bananas-{publicId}',
+  includeInSlug: false
+});
+// URL: https://yourdomain.co/earthfare-organic-bananas (clean)
+// publicId: 'yC66VW' (pattern identifier)
+// url_slug_short: 'fjetMj' (short for sharing)
+// Both redirect to same destination
+```
+
 ## [0.3.7] - 2025-07-29
 
 ### Fixed

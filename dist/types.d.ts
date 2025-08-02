@@ -136,6 +136,8 @@ export interface GenerationResult {
     publicId?: string;
     /** QR code as base64 data URL (if generated) */
     qrCode?: string;
+    /** Short URL slug for sharing (always generated, even in Framework Mode) */
+    url_slug_short?: string;
     /** Whether generation was successful */
     success: boolean;
     /** Error message if generation failed */
