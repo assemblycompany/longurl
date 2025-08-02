@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2025-07-29
+
+### Fixed
+- **FIXED**: `includeInSlug: false` now works correctly with pattern URLs
+  - Pattern URLs now properly respect `includeInSlug: false` setting
+  - Removes trailing dash + placeholder as a unit for clean URLs
+  - Preserves publicId for storage while creating clean URL slugs
+  - Works consistently across all code paths (collision checking, error handling)
+- **FIXED**: Pattern resolution in `url_base` storage
+  - `{publicId}` placeholders now properly resolved before database storage
+  - Prevents orphaned URLs with unresolved placeholders
+  - Ensures all stored `url_base` values are fully resolved
+- **FIXED**: Parameter passing to pattern generator
+  - `includeInSlug` parameter now correctly passed to pattern generator
+  - `generate_qr_code` parameter now correctly passed to pattern generator
+  - All options properly reach the pattern generation logic
+
+### Changed
+- **IMPROVED**: Pattern URL behavior with `includeInSlug: false`
+  - Clean URLs without trailing dashes when `includeInSlug: false`
+  - Elegant removal of trailing dash + placeholder as a unit
+  - User-friendly pattern design (no special rules needed)
+  - Consistent behavior across all URL generation modes
+
+### Examples
+
+#### Pattern URLs with `includeInSlug: false`
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-123', '/hub/earthfare-organic-bananas-{publicId}', {}, {
+  urlPattern: 'earthfare-organic-bananas-{publicId}',
+  includeInSlug: false
+});
+// URL: https://yourdomain.co/earthfare-organic-bananas (clean, no trailing dash)
+// publicId: 'X7gT5p' (preserved for storage)
+// urlBase: /hub/earthfare-organic-bananas-X7gT5p (resolved for routing)
+```
+
 ## [0.3.6] - 2025-07-29
 
 ### Added

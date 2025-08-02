@@ -202,14 +202,17 @@ export class LongURL {
         return result;
       }
 
+      // Resolve {publicId} placeholder in originalUrl for url_base
+      const resolvedOriginalUrl = originalUrl.replace('{publicId}', result.publicId || '');
+      
       // Save to storage via adapter
       const entityData = {
         urlId: result.urlId,
         urlSlug: result.urlId,  // NEW: Clear naming
         entityType,
         entityId,
-        originalUrl,
-        urlBase: originalUrl,   // NEW: Clear naming
+        originalUrl: resolvedOriginalUrl,  // Resolved URL for url_base
+        urlBase: resolvedOriginalUrl,     // NEW: Clear naming - always resolved
         metadata: metadata || {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -228,13 +231,15 @@ export class LongURL {
         success: true,
         urlId: result.urlId,
         shortUrl,
-        originalUrl,
+        originalUrl: resolvedOriginalUrl,  // Use resolved URL
         entityType,
         entityId,
         // NEW: Clear naming
         urlSlug: result.urlId,
-        urlBase: originalUrl,
+        urlBase: resolvedOriginalUrl,     // Use resolved URL
         urlOutput: shortUrl,
+        // Include publicId from result
+        publicId: result.publicId,
         // QR code from result
         qrCode: result.qrCode
       };

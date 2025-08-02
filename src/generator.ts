@@ -41,7 +41,9 @@ export async function generateUrlId(
         idLength,
         domain,
         includeEntityInPath,
-        publicId  // NEW: Use publicId parameter
+        publicId,  // NEW: Use publicId parameter
+        includeInSlug,  // Pass includeInSlug to pattern generator
+        generate_qr_code
       }, dbConfig);
     }
     

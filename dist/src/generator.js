@@ -31,7 +31,9 @@ async function generateUrlId(entityType, entityId, options = {}, dbConfig = type
                 idLength,
                 domain,
                 includeEntityInPath,
-                publicId // NEW: Use publicId parameter
+                publicId, // NEW: Use publicId parameter
+                includeInSlug, // Pass includeInSlug to pattern generator
+                generate_qr_code
             }, dbConfig);
         }
         // Framework Mode: Use provided publicId or entity ID directly instead of generating random ID

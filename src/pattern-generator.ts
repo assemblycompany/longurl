@@ -55,12 +55,9 @@ export async function generatePatternUrl(
     let urlId: string;
     
     // Handle includeInSlug option for pattern URLs
-    if (providedPublicId && !includeInSlug) {
-      // Use provided publicId for the placeholder, but generate random slug
-      const randomSlug = generateBase62Id(idLength);
-      urlId = hasPublicIdPlaceholder 
-        ? urlPattern.replace('{publicId}', randomSlug)
-        : urlPattern.replace('{endpointId}', randomSlug);
+    if (!includeInSlug) {
+      // Remove trailing dash + placeholder as a unit
+      urlId = urlPattern.replace(/-{publicId}/, '').replace(/-{endpointId}/, '');
     } else {
       // Use publicId in the pattern (default behavior)
       urlId = hasPublicIdPlaceholder 
@@ -109,10 +106,16 @@ export async function generatePatternUrl(
     
     // Replace pattern and check for collisions
     while (attempts < MAX_ATTEMPTS && collisionCheckingAvailable) {
-      // Replace placeholder with generated publicId
-      const urlId = hasPublicIdPlaceholder 
-        ? urlPattern.replace('{publicId}', finalPublicId)
-        : urlPattern.replace('{endpointId}', finalPublicId);
+      // Determine what to use in URL slug based on includeInSlug
+      if (!includeInSlug) {
+        // Remove trailing dash + placeholder as a unit
+        urlId = urlPattern.replace(/-{publicId}/, '').replace(/-{endpointId}/, '');
+      } else {
+        // Use publicId in the pattern
+        urlId = hasPublicIdPlaceholder 
+          ? urlPattern.replace('{publicId}', finalPublicId)
+          : urlPattern.replace('{endpointId}', finalPublicId);
+      }
       
       try {
         // Check collision on the full generated URL ID
@@ -155,6 +158,12 @@ export async function generatePatternUrl(
         finalPublicId = generateBase62Id(idLength);
         attempts++;
         
+        // Recalculate urlId with new publicId, respecting includeInSlug
+        const slugValue = !includeInSlug ? '' : finalPublicId;
+        urlId = hasPublicIdPlaceholder 
+          ? urlPattern.replace('{publicId}', slugValue)
+          : urlPattern.replace('{endpointId}', slugValue);
+        
       } catch (error) {
         // Database issue - degrade gracefully (same pattern as existing generator)
         console.log("⚠️  Database not fully configured:");
@@ -165,9 +174,16 @@ export async function generatePatternUrl(
         // Disable collision checking and use current publicId
         collisionCheckingAvailable = false;
         
-        const urlId = hasPublicIdPlaceholder 
-          ? urlPattern.replace('{publicId}', finalPublicId)
-          : urlPattern.replace('{endpointId}', finalPublicId);
+        // Respect includeInSlug setting even in error fallback
+        if (!includeInSlug) {
+          // Remove trailing dash + placeholder as a unit
+          urlId = urlPattern.replace(/-{publicId}/, '').replace(/-{endpointId}/, '');
+        } else {
+          // Use publicId in the pattern
+          urlId = hasPublicIdPlaceholder 
+            ? urlPattern.replace('{publicId}', finalPublicId)
+            : urlPattern.replace('{endpointId}', finalPublicId);
+        }
         
         const cleanDomain = domain.replace(/^https?:\/\//, '');
         
