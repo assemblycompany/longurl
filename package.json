@@ -1,6 +1,6 @@
 {
   "name": "longurl-js",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "LongURL - Programmable URL management framework with entity-driven design and production-ready infrastructure",
   "keywords": [
     "longurl",
