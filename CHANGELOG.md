@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-11-10
+
+### Added
+- **NEW**: `url_slug_short` database column for efficient storage
+  - `url_slug_short` now stored as a column in the same row as `url_slug`
+  - Eliminates duplicate rows - both slugs stored together
+  - Added `migration-add-url-slug-short.sql` for easy database updates
+  - Unique index on `url_slug_short` for fast lookups
+
+### Changed
+- **IMPROVED**: Storage architecture for `url_slug_short`
+  - Previously: `url_slug_short` stored as separate row
+  - Now: Both `url_slug` and `url_slug_short` in same row
+  - More efficient: Single row lookup for both URLs
+  - Better data integrity: Both slugs always point to same `url_base`
+- **ENHANCED**: Resolver now handles both slug types
+  - Resolves by `url_slug` (readable slug)
+  - Resolves by `url_slug_short` (short Base62 ID)
+  - Both resolve to the same `url_base` destination
+  - Automatic fallback: tries `url_slug` first, then `url_slug_short`
+- **ENHANCED**: Collision detection checks both columns
+  - Prevents collisions in both `url_slug` and `url_slug_short`
+  - Ensures uniqueness across both slug types
+  - Works with legacy and new schema detection
+
+### Migration
+- **REQUIRED**: Run `migration-add-url-slug-short.sql` to add column
+  - Adds `url_slug_short TEXT UNIQUE` column to `endpoints` table
+  - Creates index for fast lookups
+  - Backward compatible: Existing URLs work without migration
+  - New URLs will populate `url_slug_short` automatically
+
+### Examples
+
+#### Framework Mode with url_slug_short in same row
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-dell-xps-13', 'https://...', {}, {
+  enableShortening: false
+});
+// url_slug: 'laptop-dell-xps-13' (readable)
+// url_slug_short: 'X7gT5p' (short for sharing)
+// Both stored in same database row
+// Both resolve to same url_base
+```
+
+#### Resolving by either slug
+```typescript
+// Both of these resolve to the same destination:
+await longurl.resolve('laptop-dell-xps-13');  // url_slug
+await longurl.resolve('X7gT5p');              // url_slug_short
+```
+
 ## [0.3.8] - 2025-07-29
 
 ### Added
