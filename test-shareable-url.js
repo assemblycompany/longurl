@@ -28,7 +28,7 @@ async function testShareableUrl() {
     console.log(`   URL: ${result1.shortUrl}`);
     console.log(`   URL ID: ${result1.urlId}`);
     console.log(`   publicId: ${result1.publicId}`);
-    console.log(`   shareable_url: ${result1.shareable_url}`);
+    console.log(`   url_slug_short: ${result1.url_slug_short}`);
     console.log(`   QR Code: ${result1.qrCode ? 'Generated' : 'Not generated'}`);
 
     // Test 2: Framework Mode
@@ -46,7 +46,7 @@ async function testShareableUrl() {
     console.log(`   URL: ${result2.shortUrl}`);
     console.log(`   URL ID: ${result2.urlId}`);
     console.log(`   publicId: ${result2.publicId}`);
-    console.log(`   shareable_url: ${result2.shareable_url}`);
+    console.log(`   url_slug_short: ${result2.url_slug_short}`);
     console.log(`   QR Code: ${result2.qrCode ? 'Generated' : 'Not generated'}`);
 
     // Test 3: Framework Mode with includeInSlug: false
@@ -59,7 +59,7 @@ async function testShareableUrl() {
     console.log(`   URL: ${result3.shortUrl}`);
     console.log(`   URL ID: ${result3.urlId}`);
     console.log(`   publicId: ${result3.publicId}`);
-    console.log(`   shareable_url: ${result3.shareable_url}`);
+    console.log(`   url_slug_short: ${result3.url_slug_short}`);
     console.log(`   QR Code: ${result3.qrCode ? 'Generated' : 'Not generated'}`);
 
     // Test 4: Pattern URLs
@@ -73,11 +73,11 @@ async function testShareableUrl() {
     console.log(`   URL: ${result4.shortUrl}`);
     console.log(`   URL ID: ${result4.urlId}`);
     console.log(`   publicId: ${result4.publicId}`);
-    console.log(`   shareable_url: ${result4.shareable_url}`);
+    console.log(`   url_slug_short: ${result4.url_slug_short}`);
     console.log(`   QR Code: ${result4.qrCode ? 'Generated' : 'Not generated'}`);
 
     console.log('\n🎯 Test Complete!');
-    console.log('💡 Key Question: Is shareable_url always generated and different from publicId?');
+    console.log('💡 Key Question: Is url_slug_short always generated and different from publicId?');
     
   } catch (error) {
     console.error('❌ Test failed:', error);

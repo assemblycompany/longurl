@@ -1,6 +1,6 @@
 {
   "name": "longurl-js",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "description": "LongURL - Programmable URL management framework with entity-driven design and production-ready infrastructure",
   "keywords": [
     "longurl",
@@ -33,6 +33,8 @@
     "dev": "tsc --watch",
     "lint": "eslint .",
     "test": "jest",
+    "test:local": "npm run build && node test-local-no-db.js",
+    "test:url-slug-short": "npm run build && node test-url-slug-short.js",
     "prepublishOnly": "npm run build",
     "push": "pushscript",
     "commit": "pushscript commit",
@@ -62,6 +64,7 @@
     "CHANGELOG.md",
     "DEPRECATION-NOTICE.md",
     "migration-add-qr-code.sql",
+    "migration-add-url-slug-short.sql",
     "LICENSE"
   ],
   "engines": {

@@ -236,6 +236,7 @@ async function main() {
                 console.log('✅ Shortened URL generated:');
                 console.log(`🔗 Short URL: ${shortenResult.shortUrl}`);
                 console.log(`🆔 URL ID: ${shortenResult.urlId} (random Base62)`);
+                console.log(`📦 url_slug_short: ${shortenResult.url_slug_short || 'N/A'}`);
             }
             else {
                 console.log(`❌ Shortening failed: ${shortenResult.error}`);
@@ -248,7 +249,9 @@ async function main() {
             if (frameworkResult.success) {
                 console.log('✅ Framework URL generated:');
                 console.log(`🔗 Managed URL: ${frameworkResult.shortUrl}`);
-                console.log(`🆔 URL ID: ${frameworkResult.urlId} (readable entity ID)`);
+                console.log(`🆔 URL ID (url_slug): ${frameworkResult.urlId} (readable entity ID)`);
+                console.log(`📦 url_slug_short: ${frameworkResult.url_slug_short || 'N/A'} (random Base62 for sharing)`);
+                console.log(`🔑 publicId: ${frameworkResult.publicId || 'N/A'}`);
             }
             else {
                 console.log(`❌ Framework mode failed: ${frameworkResult.error}`);
@@ -271,7 +274,13 @@ async function main() {
             if (result.success) {
                 console.log('✅ URL generated successfully!');
                 console.log(`🔗 ${isFrameworkMode ? 'Managed' : 'Short'} URL: ${result.shortUrl}`);
-                console.log(`🆔 URL ID: ${result.urlId}`);
+                console.log(`🆔 URL ID (url_slug): ${result.urlId}`);
+                if (result.url_slug_short) {
+                    console.log(`📦 url_slug_short: ${result.url_slug_short}`);
+                }
+                if (result.publicId && result.publicId !== result.urlId) {
+                    console.log(`🔑 publicId: ${result.publicId}`);
+                }
             }
             else {
                 console.log(`❌ Generation failed: ${result.error}`);

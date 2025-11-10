@@ -11,6 +11,9 @@ export interface EntityData {
   /** The public path segment (readable slug or short ID) */
   urlSlug: string;
   
+  /** Short URL slug (random Base62 ID) for easy sharing (optional) */
+  urlSlugShort?: string;
+  
   /** The destination URL or internal route */
   urlBase: string;
   

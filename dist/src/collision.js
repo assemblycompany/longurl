@@ -38,9 +38,29 @@ async function checkCollision(entityType, urlId, dbConfig) {
         const supabase = (0, supabase_js_1.createClient)(dbConfig.connection.url, dbConfig.connection.key);
         // For the lookup table strategy, always check the main table
         const table = dbConfig.lookupTable || 'short_urls';
-        const column = 'url_id';
-        // Check if ID exists in the database
-        let query = supabase.from(table).select('id').eq(column, urlId);
+        // Detect which column to use (new schema: url_slug, legacy: url_id)
+        let column = 'url_id';
+        try {
+            // Try to detect schema by checking if url_slug column exists
+            const { data: schemaCheck, error: schemaError } = await supabase
+                .from(table)
+                .select('url_slug')
+                .limit(1);
+            // If no error, url_slug exists (new schema)
+            if (!schemaError && schemaCheck !== null) {
+                column = 'url_slug';
+            }
+        }
+        catch {
+            // Fall back to legacy column
+            column = 'url_id';
+        }
+        // Check if ID exists in url_slug or url_slug_short columns
+        // Use OR condition to check both columns (Supabase PostgREST syntax)
+        let query = supabase
+            .from(table)
+            .select('id')
+            .or(`${column}.eq.${urlId},url_slug_short.eq.${urlId}`);
         // Add entity type filter if it's not the default type
         if (entityType !== 'default') {
             query = query.eq('entity_type', entityType);

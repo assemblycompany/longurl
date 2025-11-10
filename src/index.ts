@@ -209,6 +209,9 @@ export class LongURL {
       const entityData = {
         urlId: result.urlId,
         urlSlug: result.urlId,  // NEW: Clear naming
+        urlSlugShort: result.url_slug_short && result.url_slug_short !== result.urlId 
+          ? result.url_slug_short 
+          : undefined,  // Store short slug in same row if different from main slug
         entityType,
         entityId,
         originalUrl: resolvedOriginalUrl,  // Resolved URL for url_base
@@ -220,24 +223,6 @@ export class LongURL {
       };
 
       await this.adapter.save(result.urlId, entityData);
-
-      // If we have a short URL slug (Framework Mode), save it too
-      if (result.url_slug_short && result.url_slug_short !== result.urlId) {
-        const shortEntityData = {
-          urlId: result.url_slug_short,
-          urlSlug: result.url_slug_short,
-          entityType,
-          entityId,
-          originalUrl: resolvedOriginalUrl,  // Same url_base
-          urlBase: resolvedOriginalUrl,     // Same url_base
-          metadata: metadata || {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          qrCode: result.qrCode  // Same QR code
-        };
-
-        await this.adapter.save(result.url_slug_short, shortEntityData);
-      }
 
       // Build short URL
       const baseUrl = this.config.baseUrl || 'https://longurl.co';

@@ -10,6 +10,7 @@
 CREATE TABLE IF NOT EXISTS endpoints (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   url_slug TEXT UNIQUE NOT NULL,
+  url_slug_short TEXT UNIQUE,
   entity_type TEXT,
   entity_id TEXT,
   url_base TEXT NOT NULL,
@@ -22,6 +23,9 @@ CREATE TABLE IF NOT EXISTS endpoints (
 
 -- Index for fast lookups by url_slug
 CREATE INDEX IF NOT EXISTS idx_endpoints_url_slug ON endpoints(url_slug);
+
+-- Index for fast lookups by url_slug_short
+CREATE INDEX IF NOT EXISTS idx_endpoints_url_slug_short ON endpoints(url_slug_short);
 
 -- Index for entity queries
 CREATE INDEX IF NOT EXISTS idx_endpoints_entity ON endpoints(entity_type, entity_id);

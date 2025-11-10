@@ -221,6 +221,7 @@ export class SupabaseAdapter extends StorageAdapter {
 
       const insertData = {
         [schema.slugColumn]: urlId,
+        url_slug_short: data.urlSlugShort || null,
         entity_type: data.entityType,
         entity_id: data.entityId,
         [schema.baseColumn]: data.originalUrl,
@@ -253,13 +254,29 @@ export class SupabaseAdapter extends StorageAdapter {
       await this.detectTableSchema();
       const schema = this.tableSchema!;
 
-      const { data, error } = await this.client
+      // Try resolving by url_slug first
+      let { data, error } = await this.client
         .from(schema.table)
         .select('*')
         .eq(schema.slugColumn, urlId)
         .single();
 
-      if (error?.code === 'PGRST116') return null; // Not found - expected
+      // If not found, try resolving by url_slug_short
+      if (error?.code === 'PGRST116') {
+        const { data: shortData, error: shortError } = await this.client
+          .from(schema.table)
+          .select('*')
+          .eq('url_slug_short', urlId)
+          .single();
+        
+        if (shortError?.code === 'PGRST116') return null; // Not found - expected
+        if (shortError) this.handleError(shortError, 'resolve');
+        if (!shortData) return null;
+        
+        data = shortData;
+        error = null;
+      }
+
       if (error) this.handleError(error, 'resolve');
       if (!data) return null;
 
@@ -273,6 +290,8 @@ export class SupabaseAdapter extends StorageAdapter {
         // New naming (preferred)
         urlSlug: slugValue,
         urlBase: baseValue,
+        // Short slug (optional)
+        urlSlugShort: data.url_slug_short || undefined,
         // Common fields
         entityType: data.entity_type,
         entityId: data.entity_id,
@@ -297,13 +316,27 @@ export class SupabaseAdapter extends StorageAdapter {
       await this.detectTableSchema();
       const schema = this.tableSchema!;
 
-      const { data, error } = await this.client
+      // Check by url_slug first
+      let { data, error } = await this.client
         .from(schema.table)
         .select(schema.slugColumn)
         .eq(schema.slugColumn, urlId)
         .single();
 
-      if (error?.code === 'PGRST116') return false; // Not found - expected
+      // If not found, check by url_slug_short
+      if (error?.code === 'PGRST116') {
+        const { data: shortData, error: shortError } = await this.client
+          .from(schema.table)
+          .select('url_slug_short')
+          .eq('url_slug_short', urlId)
+          .single();
+        
+        if (shortError?.code === 'PGRST116') return false; // Not found - expected
+        if (shortError) this.handleError(shortError, 'exists');
+        
+        return !!shortData;
+      }
+
       if (error) this.handleError(error, 'exists');
       
       return !!data;
