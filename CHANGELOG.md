@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-11-10
+
+### Added
+- **NEW**: Update/Upsert functionality for existing endpoints
+  - `manageUrl()` now supports updating existing endpoints by entity
+  - Automatic upsert: INSERT if new, UPDATE if entity exists
+  - Entity-based lookup: Updates by `entity_type + entity_id` (not just slug)
+  - Metadata merging: Preserves existing metadata, adds new fields
+  - Slug change support: Can update `url_slug` when URL pattern changes
+  - Collision protection: Prevents duplicate slugs across entities
+
+### Changed
+- **ENHANCED**: `SupabaseAdapter.save()` now implements upsert logic
+  - Checks if entity exists before insert
+  - Updates existing rows instead of failing on duplicates
+  - Preserves `created_at` timestamp on updates
+  - Updates `updated_at` timestamp automatically
+  - Merges metadata instead of replacing
+- **IMPROVED**: Error messages for collision detection
+  - Clear messages when slug collisions occur
+  - Suggests using update() or different entity_id
+  - Distinguishes between update conflicts and create conflicts
+
+### Behavior
+- **Idempotent**: Calling `manageUrl()` multiple times with same entity produces same result
+- **Safe**: Collision checks prevent data loss
+- **Efficient**: Single query to check existence, then insert or update
+- **Cache-aware**: Clears old cache entries when slugs change
+
+### Examples
+
+#### Update existing endpoint
+```typescript
+// First call - creates endpoint
+await longurl.manageUrl('product', 'laptop-123', 'https://shop.com/laptop');
+
+// Second call - updates endpoint (same entity)
+await longurl.manageUrl('product', 'laptop-123', 'https://shop.com/laptop-v2');
+// ✅ Updates url_base, merges metadata, preserves created_at
+```
+
+#### Update with new URL pattern
+```typescript
+// Change URL pattern for existing entity
+await longurl.manageUrl('product', 'laptop-123', 'https://shop.com/laptop', {}, {
+  urlPattern: 'new-pattern-{publicId}'
+});
+// ✅ Updates url_slug, invalidates old slug, preserves entity data
+```
+
+#### Metadata merging
+```typescript
+// First call
+await longurl.manageUrl('product', 'laptop-123', 'https://...', { 
+  campaign: 'launch', 
+  source: 'email' 
+});
+
+// Update call
+await longurl.manageUrl('product', 'laptop-123', 'https://...', { 
+  version: '2.0',
+  updated: true 
+});
+// ✅ Final metadata: { campaign: 'launch', source: 'email', version: '2.0', updated: true }
+```
+
 ## [0.4.0] - 2025-11-10
 
 ### Added

@@ -219,27 +219,108 @@ export class SupabaseAdapter extends StorageAdapter {
       await this.detectTableSchema();
       const schema = this.tableSchema!;
 
-      const insertData = {
+      // Check if entity already exists (primary lookup by entity_type + entity_id)
+      const { data: existingEntity, error: lookupError } = await this.client
+        .from(schema.table)
+        .select('*')
+        .eq('entity_type', data.entityType)
+        .eq('entity_id', data.entityId)
+        .maybeSingle();
+
+      if (lookupError && lookupError.code !== 'PGRST116') {
+        this.handleError(lookupError, 'save');
+      }
+
+      const updateData: any = {
         [schema.slugColumn]: urlId,
         url_slug_short: data.urlSlugShort || null,
         entity_type: data.entityType,
         entity_id: data.entityId,
         [schema.baseColumn]: data.originalUrl,
         qr_code: data.qrCode || null,
-        metadata: data.metadata || {},
-        created_at: data.createdAt,
         updated_at: data.updatedAt
       };
 
-      const { error } = await this.client
-        .from(schema.table)
-        .insert(insertData);
-
-      if (error) {
-        this.handleError(error, 'save');
+      // Merge metadata if entity exists (preserve existing + add new)
+      if (existingEntity && existingEntity.metadata) {
+        updateData.metadata = {
+          ...existingEntity.metadata,
+          ...data.metadata
+        };
+      } else {
+        updateData.metadata = data.metadata || {};
       }
 
-      this.setCache(urlId, data);
+      if (existingEntity) {
+        // Entity exists - UPDATE
+        // If url_slug changed, we need to update it (but check for collisions first)
+        if (existingEntity[schema.slugColumn] !== urlId) {
+          // Check if new url_slug already exists (collision check)
+          const { data: slugExists } = await this.client
+            .from(schema.table)
+            .select(schema.slugColumn)
+            .eq(schema.slugColumn, urlId)
+            .maybeSingle();
+
+          if (slugExists) {
+            throw new Error(
+              `Cannot update: url_slug "${urlId}" already exists. ` +
+              `Entity "${data.entityType}/${data.entityId}" currently uses "${existingEntity[schema.slugColumn]}".`
+            );
+          }
+        }
+
+        // Preserve created_at, update other fields
+        const { error: updateError } = await this.client
+          .from(schema.table)
+          .update(updateData)
+          .eq('entity_type', data.entityType)
+          .eq('entity_id', data.entityId);
+
+        if (updateError) {
+          this.handleError(updateError, 'save');
+        }
+
+        // Clear cache for both old and new slugs (including url_slug_short if it exists)
+        this.cache.delete(existingEntity[schema.slugColumn]);
+        if (existingEntity.url_slug_short) {
+          this.cache.delete(existingEntity.url_slug_short);
+        }
+        this.setCache(urlId, data);
+        if (data.urlSlugShort) {
+          this.setCache(data.urlSlugShort, data);
+        }
+      } else {
+        // Entity doesn't exist - INSERT
+        // Check if url_slug already exists (collision check)
+        const { data: slugExists } = await this.client
+          .from(schema.table)
+          .select(schema.slugColumn)
+          .eq(schema.slugColumn, urlId)
+          .maybeSingle();
+
+        if (slugExists) {
+          throw new Error(
+            `Cannot create: url_slug "${urlId}" already exists for a different entity. ` +
+            `Use update() or provide a different entity_id.`
+          );
+        }
+
+        const insertData = {
+          ...updateData,
+          created_at: data.createdAt
+        };
+
+        const { error: insertError } = await this.client
+          .from(schema.table)
+          .insert(insertData);
+
+        if (insertError) {
+          this.handleError(insertError, 'save');
+        }
+
+        this.setCache(urlId, data);
+      }
     } catch (error) {
       this.handleError(error, 'save');
     }

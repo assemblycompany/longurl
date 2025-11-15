@@ -1,6 +1,6 @@
 {
   "name": "longurl-js",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "LongURL - Programmable URL management framework with entity-driven design and production-ready infrastructure",
   "keywords": [
     "longurl",
@@ -35,6 +35,7 @@
     "test": "jest",
     "test:local": "npm run build && node test-local-no-db.js",
     "test:url-slug-short": "npm run build && node test-url-slug-short.js",
+    "test:update": "npm run build && node test-update-upsert.js",
     "prepublishOnly": "npm run build",
     "push": "pushscript",
     "commit": "pushscript commit",
