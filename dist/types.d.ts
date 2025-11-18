@@ -100,10 +100,20 @@ export interface LongURLConfig {
         options?: {
             schema?: string;
             headers?: Record<string, string>;
+            realTime?: {
+                enabled: boolean;
+                params?: Record<string, any>;
+            };
             cache?: {
                 enabled?: boolean;
                 ttlMs?: number;
                 maxSize?: number;
+            };
+            storage?: {
+                /** Store QR code base64 in endpoints table (default: false = use bucket) */
+                storeQRInTable?: boolean;
+                /** Bucket name for QR code storage (default: 'qr-codes') */
+                qrCodeBucket?: string;
             };
         };
     };
@@ -236,12 +246,18 @@ export interface EndpointRecord {
     id: string;
     /** URL slug/path segment */
     url_slug: string;
+    /** Short URL slug for sharing (optional) */
+    url_slug_short?: string;
     /** Base URL/route target */
     url_base: string;
     /** ID of the entity this URL points to (optional) */
     entity_id?: string;
     /** Type of entity (optional) */
     entity_type?: string;
+    /** QR code as base64 data URL (optional, only if storeQRInTable: true) */
+    qr_code?: string;
+    /** QR code URL from storage bucket (default storage method) */
+    qr_code_url?: string;
     /** Click count */
     click_count: number;
     /** Metadata (optional) */

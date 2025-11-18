@@ -88,19 +88,21 @@ export async function generateUrlId(
         ? buildEntityUrl(domain, entityType, urlId)
         : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
       
-      // Generate QR code if enabled
+      // Always generate a short URL slug for easy sharing (generate BEFORE QR code)
+      const urlSlugShort = generateBase62Id(idLength);
+      const cleanDomain = domain.replace(/^https?:\/\//, '');
+      const shortUrlForQR = `https://${cleanDomain}/${urlSlugShort}`;
+      
+      // Generate QR code using SHORT URL for faster/easier scanning (like Bitly)
       let qrCode: string | undefined;
       if (generate_qr_code) {
         try {
-          qrCode = await generateOptimizedQRCode(shortUrl);
+          qrCode = await generateOptimizedQRCode(shortUrlForQR);
         } catch (error) {
           console.log("⚠️  QR code generation failed, continuing without QR code");
           console.log(`   ${error instanceof Error ? error.message : String(error)}`);
         }
       }
-      
-      // Always generate a short URL slug for easy sharing
-      const urlSlugShort = generateBase62Id(idLength);
       
       return {
         urlId,
@@ -128,11 +130,15 @@ export async function generateUrlId(
         ? buildEntityUrl(domain, entityType, urlId)
         : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
       
-      // Generate QR code if enabled
+      // In shortening mode, urlId IS the short URL, so use it for QR code
+      const cleanDomain = domain.replace(/^https?:\/\//, '');
+      const shortUrlForQR = `https://${cleanDomain}/${urlId}`;
+      
+      // Generate QR code using SHORT URL for faster/easier scanning (like Bitly)
       let qrCode: string | undefined;
       if (generate_qr_code) {
         try {
-          qrCode = await generateOptimizedQRCode(shortUrl);
+          qrCode = await generateOptimizedQRCode(shortUrlForQR);
         } catch (error) {
           console.log("⚠️  QR code generation failed, continuing without QR code");
           console.log(`   ${error instanceof Error ? error.message : String(error)}`);
@@ -197,11 +203,15 @@ export async function generateUrlId(
       ? buildEntityUrl(domain, entityType, urlId)
       : `https://${domain.replace(/^https?:\/\//, '')}/${urlId}`;
     
-    // Generate QR code if enabled
+    // In shortening mode, urlId IS the short URL, so use it for QR code
+    const cleanDomain = domain.replace(/^https?:\/\//, '');
+    const shortUrlForQR = `https://${cleanDomain}/${urlId}`;
+    
+    // Generate QR code using SHORT URL for faster/easier scanning (like Bitly)
     let qrCode: string | undefined;
     if (generate_qr_code) {
       try {
-        qrCode = await generateOptimizedQRCode(shortUrl);
+        qrCode = await generateOptimizedQRCode(shortUrlForQR);
       } catch (error) {
         console.log("⚠️  QR code generation failed, continuing without QR code");
         console.log(`   ${error instanceof Error ? error.message : String(error)}`);

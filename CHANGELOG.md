@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2025-11-10
+
+### Changed
+- **OPTIMIZED**: QR codes now use short URLs for faster scanning (like Bitly)
+  - QR codes now encode `url_slug_short` (e.g., `https://yourdomain.co/X7gT5p`) instead of full framework URLs
+  - Reduces QR code complexity from 60-80 characters to ~25 characters
+  - Faster scanning, better error correction, works better in low-light conditions
+  - Framework URLs still available for SEO; short URLs redirect via resolver (application-level)
+  - Applies to all generation modes: framework mode, pattern mode, and shortening mode
+
 ## [0.5.3] - 2025-11-10
 
 ### Fixed

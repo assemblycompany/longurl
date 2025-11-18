@@ -81,19 +81,20 @@ export async function generatePatternUrl(
         ? `https://${cleanDomain}/${entityType}/${urlId}`
         : `https://${cleanDomain}/${urlId}`;
       
-      // Generate QR code if enabled
+      // Always generate a short URL slug for easy sharing (generate BEFORE QR code)
+      const urlSlugShort = generateBase62Id(idLength);
+      const shortUrlForQR = `https://${cleanDomain}/${urlSlugShort}`;
+      
+      // Generate QR code using SHORT URL for faster/easier scanning (like Bitly)
       let qrCode: string | undefined;
       if (generate_qr_code) {
         try {
-          qrCode = await generateOptimizedQRCode(shortUrl);
+          qrCode = await generateOptimizedQRCode(shortUrlForQR);
         } catch (error) {
           console.log("⚠️  QR code generation failed, continuing without QR code");
           console.log(`   ${error instanceof Error ? error.message : String(error)}`);
         }
       }
-      
-      // Always generate a short URL slug for easy sharing
-      const urlSlugShort = generateBase62Id(idLength);
       
       return {
         urlId,
@@ -133,19 +134,20 @@ export async function generatePatternUrl(
             ? `https://${cleanDomain}/${entityType}/${urlId}`
             : `https://${cleanDomain}/${urlId}`;
           
-          // Generate QR code if enabled
+          // Always generate a short URL slug for easy sharing (generate BEFORE QR code)
+          const urlSlugShort = generateBase62Id(idLength);
+          const shortUrlForQR = `https://${cleanDomain}/${urlSlugShort}`;
+          
+          // Generate QR code using SHORT URL for faster/easier scanning (like Bitly)
           let qrCode: string | undefined;
           if (generate_qr_code) {
             try {
-              qrCode = await generateOptimizedQRCode(shortUrl);
+              qrCode = await generateOptimizedQRCode(shortUrlForQR);
             } catch (error) {
               console.log("⚠️  QR code generation failed, continuing without QR code");
               console.log(`   ${error instanceof Error ? error.message : String(error)}`);
             }
           }
-          
-          // Always generate a short URL slug for easy sharing
-          const urlSlugShort = generateBase62Id(idLength);
           
           return {
             urlId,
@@ -199,19 +201,20 @@ export async function generatePatternUrl(
           ? `https://${cleanDomain}/${entityType}/${urlId}`
           : `https://${cleanDomain}/${urlId}`;
         
-        // Generate QR code if enabled
+        // Always generate a short URL slug for easy sharing (generate BEFORE QR code)
+        const urlSlugShort = generateBase62Id(idLength);
+        const shortUrlForQR = `https://${cleanDomain}/${urlSlugShort}`;
+        
+        // Generate QR code using SHORT URL for faster/easier scanning (like Bitly)
         let qrCode: string | undefined;
         if (generate_qr_code) {
           try {
-            qrCode = await generateOptimizedQRCode(shortUrl);
+            qrCode = await generateOptimizedQRCode(shortUrlForQR);
           } catch (error) {
             console.log("⚠️  QR code generation failed, continuing without QR code");
             console.log(`   ${error instanceof Error ? error.message : String(error)}`);
           }
         }
-        
-        // Always generate a short URL slug for easy sharing
-        const urlSlugShort = generateBase62Id(idLength);
         
         return {
           urlId,
