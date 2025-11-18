@@ -252,7 +252,8 @@ export class SupabaseAdapter extends StorageAdapter {
             qrCodeUrl = await uploadQRCodeToBucket(
               this.client,
               data.qrCode,
-              urlId,
+              data.entityType,
+              data.entityId,
               qrCodeBucket
             );
             qrCodeBase64 = null; // Don't store base64 when using bucket

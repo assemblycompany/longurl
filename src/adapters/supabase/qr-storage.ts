@@ -20,22 +20,24 @@ function base64ToBuffer(dataUrl: string): Buffer {
  * 
  * @param client Supabase client instance
  * @param base64DataUrl QR code as base64 data URL
- * @param urlId URL ID to use as filename
+ * @param entityType Entity type (e.g., 'product', 'user')
+ * @param entityId Entity ID (e.g., 'laptop-123')
  * @param bucketName Bucket name (default: 'qr-codes')
  * @returns Public URL of uploaded QR code
  */
 export async function uploadQRCodeToBucket(
   client: SupabaseClient<any, 'public', any>,
   base64DataUrl: string,
-  urlId: string,
+  entityType: string,
+  entityId: string,
   bucketName: string = 'qr-codes'
 ): Promise<string> {
   try {
     // Convert base64 to buffer
     const buffer = base64ToBuffer(base64DataUrl);
     
-    // Generate filename: {urlId}.png
-    const filePath = `${urlId}.png`;
+    // Generate path: {entity_type}/{entity_id}.png
+    const filePath = `${entityType}/${entityId}.png`;
     
     // Upload to bucket (overwrite if exists)
     const { data: uploadData, error: uploadError } = await client.storage

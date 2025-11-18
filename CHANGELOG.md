@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2025-11-10
+
+### Changed
+- **UPDATED**: QR code bucket storage path pattern
+  - QR codes now stored using `{entityType}/{entityId}.png` pattern
+  - Example: `product/550e8400-e29b-41d4-a716-446655440000.png`
+  - Organized folder structure by entity type
+  - Uses entity UUID from endpoints table for consistent naming
+
 ## [0.5.1] - 2025-11-10
 
 ### Added
