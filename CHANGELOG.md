@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-11-10
+
+### Fixed
+- **FIXED**: Type definitions alignment
+  - `LongURLConfig.supabase.options` now matches `SupabaseConfig.options` structure
+  - Added missing `realTime` property to `LongURLConfig`
+  - Added `qr_code_url`, `qr_code`, and `url_slug_short` fields to `EndpointRecord` interface
+  - All storage configuration types now properly exported and aligned
+
 ## [0.5.2] - 2025-11-10
 
 ### Changed
