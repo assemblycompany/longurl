@@ -17,5 +17,11 @@ export interface SupabaseConfig {
       ttlMs?: number;
       maxSize?: number;
     };
+    storage?: {
+      /** Store QR code base64 in endpoints table (default: false = use bucket) */
+      storeQRInTable?: boolean;
+      /** Bucket name for QR code storage (default: 'qr-codes') */
+      qrCodeBucket?: string;
+    };
   };
 } 

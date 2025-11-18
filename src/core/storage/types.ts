@@ -38,8 +38,11 @@ export interface EntityData {
   /** Last update timestamp */
   updatedAt: string;
   
-  /** QR code as base64 data URL (optional) */
+  /** QR code as base64 data URL (optional, only used if storeQRInTable: true) */
   qrCode?: string;
+  
+  /** QR code URL from storage bucket (default storage method) */
+  qrCodeUrl?: string;
 }
 
 /**

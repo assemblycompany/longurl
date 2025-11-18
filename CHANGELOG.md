@@ -5,6 +5,93 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-11-10
+
+### Added
+- **NEW**: QR code bucket storage (default behavior)
+  - QR codes now uploaded to Supabase Storage bucket by default
+  - Stores QR code URL in `qr_code_url` column instead of base64 in `qr_code`
+  - Default bucket: `qr-codes` (configurable via `options.storage.qrCodeBucket`)
+  - More efficient: No base64 bloat in database, faster queries
+  - Better performance: CDN-delivered QR codes from storage bucket
+- **NEW**: Optional table storage for QR codes
+  - Set `options.storage.storeQRInTable: true` to store base64 in `qr_code` column (old behavior)
+  - Allows opt-in to legacy base64 storage if needed
+  - Default: `false` (uses bucket storage)
+
+### Changed
+- **ENHANCED**: QR code storage architecture
+  - **Default**: Upload QR codes to Supabase Storage bucket (`qr-codes`)
+  - **Optional**: Store base64 in `qr_code` column (opt-in via config)
+  - Response includes `qrCodeUrl` (bucket URL) by default
+  - Response includes `qrCode` (base64) only if `storeQRInTable: true`
+- **IMPROVED**: `SupabaseAdapter.save()` now handles QR code upload
+  - Automatically uploads QR codes to configured bucket
+  - Stores public URL in `qr_code_url` column
+  - Handles upload errors gracefully (throws clear error messages)
+  - Updates cache with `qrCodeUrl` after successful upload
+
+### Configuration
+```typescript
+// Default: Bucket storage (new, efficient)
+const longurl = new LongURL({
+  supabase: {
+    url: '...',
+    key: '...',
+    options: {
+      storage: {
+        qrCodeBucket: 'qr-codes'  // Optional: default is 'qr-codes'
+      }
+    }
+  }
+});
+// QR codes uploaded to bucket, URL stored in qr_code_url
+
+// Optional: Table storage (old behavior, opt-in)
+const longurl = new LongURL({
+  supabase: {
+    url: '...',
+    key: '...',
+    options: {
+      storage: {
+        storeQRInTable: true  // Opt-in to base64 storage
+      }
+    }
+  }
+});
+// QR codes stored as base64 in qr_code column
+```
+
+### Database
+- **REQUIRED**: Database must have `qr_code_url` column (already added in your Supabase setup)
+- No migration needed if column already exists
+- `qr_code` column still supported for backward compatibility (when `storeQRInTable: true`)
+
+### Examples
+
+#### Default bucket storage
+```typescript
+const result = await longurl.manageUrl('product', 'laptop-123', 'https://...');
+// result.qrCodeUrl = "https://...supabase.co/storage/v1/object/public/qr-codes/X7gT5p.png"
+// result.qrCode = undefined
+```
+
+#### Opt-in table storage
+```typescript
+const longurl = new LongURL({
+  supabase: {
+    url: '...',
+    key: '...',
+    options: {
+      storage: { storeQRInTable: true }
+    }
+  }
+});
+const result = await longurl.manageUrl('product', 'laptop-123', 'https://...');
+// result.qrCode = "data:image/png;base64,..."
+// result.qrCodeUrl = undefined
+```
+
 ## [0.5.0] - 2025-11-10
 
 ### Added

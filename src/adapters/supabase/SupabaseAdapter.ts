@@ -11,6 +11,7 @@ import { StorageAdapter } from '../../core/storage/StorageAdapter.js';
 import { EntityData, AnalyticsData } from '../../core/storage/types.js';
 import { SupabaseConfig } from './types.js';
 import { parseSupabaseError, logSupabaseError } from './errors.js';
+import { uploadQRCodeToBucket } from './qr-storage.js';
 
 export class SupabaseAdapter extends StorageAdapter {
   private client: SupabaseClient<any, 'public', any>;
@@ -231,13 +232,47 @@ export class SupabaseAdapter extends StorageAdapter {
         this.handleError(lookupError, 'save');
       }
 
+      // Handle QR code storage based on config
+      // Default: upload to bucket and store URL (storeQRInTable: false)
+      // Optional: store base64 in table (storeQRInTable: true)
+      const storeQRInTable = this.config.options?.storage?.storeQRInTable ?? false;
+      const qrCodeBucket = this.config.options?.storage?.qrCodeBucket || 'qr-codes';
+      
+      let qrCodeUrl: string | null = null;
+      let qrCodeBase64: string | null = null;
+      
+      if (data.qrCode) {
+        if (storeQRInTable) {
+          // Store base64 in qr_code column (old behavior, opt-in)
+          qrCodeBase64 = data.qrCode;
+          qrCodeUrl = null;
+        } else {
+          // Default: upload to bucket and store URL
+          try {
+            qrCodeUrl = await uploadQRCodeToBucket(
+              this.client,
+              data.qrCode,
+              urlId,
+              qrCodeBucket
+            );
+            qrCodeBase64 = null; // Don't store base64 when using bucket
+          } catch (error) {
+            // If upload fails, throw error (no fallback to base64)
+            throw new Error(
+              `Failed to upload QR code to storage bucket: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
+        }
+      }
+      
       const updateData: any = {
         [schema.slugColumn]: urlId,
         url_slug_short: data.urlSlugShort || null,
         entity_type: data.entityType,
         entity_id: data.entityId,
         [schema.baseColumn]: data.originalUrl,
-        qr_code: data.qrCode || null,
+        qr_code: qrCodeBase64, // Only set if storeQRInTable: true
+        qr_code_url: qrCodeUrl, // Only set if storeQRInTable: false (default)
         updated_at: data.updatedAt
       };
 
@@ -286,9 +321,11 @@ export class SupabaseAdapter extends StorageAdapter {
         if (existingEntity.url_slug_short) {
           this.cache.delete(existingEntity.url_slug_short);
         }
-        this.setCache(urlId, data);
+        // Update cache with qrCodeUrl if bucket storage was used
+        const cachedData = { ...data, qrCodeUrl: qrCodeUrl || undefined };
+        this.setCache(urlId, cachedData);
         if (data.urlSlugShort) {
-          this.setCache(data.urlSlugShort, data);
+          this.setCache(data.urlSlugShort, cachedData);
         }
       } else {
         // Entity doesn't exist - INSERT
@@ -319,7 +356,9 @@ export class SupabaseAdapter extends StorageAdapter {
           this.handleError(insertError, 'save');
         }
 
-        this.setCache(urlId, data);
+        // Update cache with qrCodeUrl if bucket storage was used
+        const cachedData = { ...data, qrCodeUrl: qrCodeUrl || undefined };
+        this.setCache(urlId, cachedData);
       }
     } catch (error) {
       this.handleError(error, 'save');
@@ -379,8 +418,9 @@ export class SupabaseAdapter extends StorageAdapter {
         metadata: data.metadata || {},
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        // QR code
-        qrCode: data.qr_code || undefined
+        // QR code (from table if storeQRInTable: true, or from bucket URL if false/default)
+        qrCode: data.qr_code || undefined,
+        qrCodeUrl: data.qr_code_url || undefined
       };
 
       this.setCache(urlId, entityData);

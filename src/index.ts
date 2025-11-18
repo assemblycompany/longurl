@@ -224,6 +224,10 @@ export class LongURL {
 
       await this.adapter.save(result.urlId, entityData);
 
+      // Resolve entity to get qrCodeUrl (if bucket storage was used)
+      // This is needed because adapter.save() uploads QR and stores URL, but doesn't return it
+      const savedEntity = await this.adapter.resolve(result.urlId);
+      
       // Build short URL
       const baseUrl = this.config.baseUrl || 'https://longurl.co';
       const shortUrl = this.config.includeEntityInPath 
@@ -243,8 +247,9 @@ export class LongURL {
         urlOutput: shortUrl,
         // Include publicId from result
         publicId: result.publicId,
-        // QR code from result
-        qrCode: result.qrCode,
+        // QR code: use qrCodeUrl from bucket (default) or qrCode base64 (if storeQRInTable: true)
+        qrCode: savedEntity?.qrCode || result.qrCode, // Only if storeQRInTable: true
+        qrCodeUrl: savedEntity?.qrCodeUrl, // From bucket storage (default)
         // Short URL slug (always generated in Framework Mode)
         url_slug_short: result.url_slug_short
       };

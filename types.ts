@@ -173,8 +173,11 @@ export interface GenerationResult {
   /** The generated or provided public ID */
   publicId?: string;
   
-  /** QR code as base64 data URL (if generated) */
+  /** QR code as base64 data URL (if generated and storeQRInTable: true) */
   qrCode?: string;
+  
+  /** QR code URL from storage bucket (default storage method) */
+  qrCodeUrl?: string;
   
   /** Short URL slug for sharing (always generated, even in Framework Mode) */
   url_slug_short?: string;
